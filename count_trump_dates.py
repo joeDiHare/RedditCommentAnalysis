@@ -3,10 +3,10 @@ import time
 import datetime
 import collections
 
-filename = 'OutputScore.txt'; target = 'Trump'
-filename = 'OutputTimesCameron.txt'; target = 'Caneron'
-filename = 'OutputTimesCuba.txt'; target = 'Cuba'
-filename = 'OutputTimesFaggot.txt'; target = 'Faggot'
+filename = 'OutputScore.txt';        target = 'Trump'
+filename = 'OutputTimesCameron.txt'; target = 'Cameron'
+filename = 'OutputTimesCuba.txt';    target = 'Cuba'
+filename = 'OutputTimesFaggot.txt';  target = 'Faggot'
 
 results = []
 with open(filename, newline='') as inputfile:
