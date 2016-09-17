@@ -27,8 +27,8 @@ Probably do, too), ACL 2014
 '''
 
 # Parameters
-srs_lmt = 10000#30100  # serious posts to train on
-sar_lmt = 10000#30100  # sarcastic posts to train on
+srs_lmt = 10#30100  # serious posts to train on
+sar_lmt = 10#30100  # sarcastic posts to train on
 top_k = 30  # features to display
 num_ex = 20  # examples displayed per feature
 min_ex = 0  # shortest example displayed
@@ -36,7 +36,7 @@ max_ex = 120  # longest example displayed
 ovr_ex = True  # display longer/shorter examples if we run out
 
 print('Querying DB...\n')
-sql_conn = sqlite3.connect('reddit.sqlite')
+sql_conn = sqlite3.connect("C:/Users/Stefano/Documents/reddit.sqlite")
 
 sarcasmData = sql_conn.execute("SELECT subreddit, body, score FROM May2015\
                                 WHERE body LIKE '% /s'\
