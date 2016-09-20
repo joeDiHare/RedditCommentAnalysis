@@ -131,12 +131,13 @@ for u in range(0, len(users)):
         tmp.append(dates.count(d.strftime('%d/%m/%Y')))
     noMsgPerDay.append(tmp)
 
-# WHAT DAYS OF THE WEEK DO WE MESSAGE LESS?
-# extract days with 0 messages
+# WHAT DAYS OF THE WEEK DO WE MESSAGE LESS or MORE?
+# subplot(1) LESS
+#  extract days with 0 messages
 week=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 plt.figure(figsize=(10, 9))
 f, ax1 = plt.subplots(2, sharex=True)
-cols = 'byrg'
+cols = [[.5,.5,.8,.3],[.5,.6,.1,.3],'b','y','r','g']
 ddaysCount = []
 for u in range(0, len(users)):
     grouped_L = [[k, sum(1 for i in g)] for k,g in groupby(noMsgPerDay[u])] #sum occurrences of consecutive numbers
@@ -148,8 +149,8 @@ for u in range(0, len(users)):
     plt.xticks(range(len(ddaysCount[u])), ddaysCount[u].keys())
 plt.ylabel('Occurrence'); plt.title('Number of times there were ZERO :( messages on a specific day of the week')
 plt.legend(users)
-
-# WHAT DAYS OF THE WEEK DO WE MESSAGE MORE?
+# subplot(2) MORE
+#  WHAT DAYS OF THE WEEK DO WE MESSAGE MORE?
 noMsgPerWeekday=[]
 for u in range(0, len(users)):
     ddays = [[dd[n].strftime('%a'),noMsgPerDay[u][n]] for n in range(0,len(noMsgPerDay[u])) if noMsgPerDay[u][n] > 0]
@@ -162,62 +163,58 @@ for u in range(0, len(users)):
 plt.ylabel('Occurrence'); plt.title('Messaging during the week')
 plt.show()
 
-
-ddaysCount = OrderedDict((w, ddays.count(w)) for w in week) #ddaysCount = {w:ddays.count(w) for w in week}
-# plot
-plt.bar(range(len(ddaysCount)), ddaysCount.values(), align='center')
-plt.xticks(range(len(ddaysCount)), ddaysCount.keys())
+# WHAT HOUR OF THE DAY WE MESSAGE MORE?
+hours=['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23']
+# plt.figure(figsize=(10, 9))
+ax2 = plt.subplot(111)
+noMsgPerHour=[]
+width=.3
+for u in range(0, len(users)):
+    tmp = []
+    for t in hours:
+        tmp.append(sum([tm[n][:2].count(t) for n in range(0,len(tm)) if ind[u][n]]))
+    noMsgPerHour.append(tmp)
+    ax2.bar(u*width+np.arange(0,len(noMsgPerHour[u])), noMsgPerHour[u], color=cols[u], width=width)#,bottom=noMsgPerHour[u-1] if u > 0 else [0] * 24)
+    plt.xticks(np.arange(0,len(noMsgPerHour[u])), hours)
+plt.ylabel('Occurrence'); plt.xlabel('Hour of the day'); plt.title('Messaging during the day')
+plt.legend(users)
 plt.show()
 
+## PLOT Message Distribution over period
 plt.figure(figsize=(12, 9))
 ax = plt.subplot(111)
-ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-ax.get_xaxis().tick_bottom(); ax.get_yaxis().tick_left()
-plt.xticks(fontsize=14)
-plt.yticks(range(5000, 30001, 5000), fontsize=14)
-plt.xlabel("days", fontsize=16)
-plt.ylabel("Number of messages", fontsize=16)
-
-df = pandas.DataFrame.from_dict(dict(zip(Duniq,noMsgPerDay)), orient='index')
-df.plot(kind='bar')
-
-## PLOT Message Distribution over period
-# data
+ax.spines["top"].set_visible(False);ax.spines["right"].set_visible(False)
+ax.get_xaxis().tick_bottom();ax.get_yaxis().tick_left()
 for u in range(0,len(users)):
     xdata = range(0,len(dd))
-    ydata = noMsgPerDay[u]
-    # let us make a simple graph
-    fig = plt.figure(figsize=[15,10])
-    ax = plt.subplot(111)
-    l = ax.fill_between(xdata, ydata, facecolor='', alpha=0.5)
-    ax.fill_between(xdata,  [sum(x) for x in zip([0]*len(dd), ydata)], [sum(x) for x in zip(ydata, ydata)], facecolor='blue', alpha=0.5)
-    ax.fill_between(xdata,  [sum(x) for x in zip([0]*len(dd), ydata)], [sum(x) for x in zip(ydata, ydata)], facecolor='yellow', alpha=0.5)
-
-    l = ax.fill_between(xdata, ydata)
-    # set the basic properties
-    ax.set_xlabel('Day posting');ax.set_ylabel('Number of messages');ax.set_title('Message Distribution')
-    # set the limits
-    ax.set_xlim(0, len(dd))
-    ax.set_ylim(0, max(ydata)+5)
+    ydata1 = noMsgPerDay[u-1] if u>0 else [0]*len(dd)
+    ydata2 = [sum(x) for x in zip(noMsgPerDay[u], noMsgPerDay[u-1])] if u>0 else noMsgPerDay[u]
+    l = ax.fill_between(xdata,  ydata1, ydata2, facecolor=cols[u], alpha=0.5)
     # change the fill color, edge color and thickness
-    l.set_facecolors([[.5,.5,.8,.3]])
+    # l.set_facecolors([[.5,.5,.8,.3]])
     l.set_edgecolors([[0, 0, .5, .3]])
-    l.set_linewidths([.5])
-    # add more ticks
-    ax.set_xticks(range(0,len(dd),30))
-    # remove tick marks
-    ax.xaxis.set_tick_params(size=0)
-    ax.yaxis.set_tick_params(size=0)
-    # change the color of the top and right spines to opaque gray
-    ax.spines['right'].set_color((.8,.8,.8))
-    ax.spines['top'].set_color((.8,.8,.8))
-    # tweak the axis labels
-    xlab = ax.xaxis.get_label()
-    ylab = ax.yaxis.get_label()
-    xlab.set_style('italic')
-    xlab.set_size(10)
-    ylab.set_style('italic')
-    ylab.set_size(10)
-    # tweak the title
-    ttl = ax.title
-    ttl.set_weight('bold')
+    l.set_linewidths([.1])
+ax.set_xlabel('Day posting', fontsize=16)
+ax.set_ylabel('Number of messages', fontsize=16)
+ax.set_title('Message Distribution', fontsize=18)
+# set the limits
+ax.set_xlim(0, len(dd))
+ax.set_ylim(0, max(ydata2) + 5)
+# add more ticks
+ax.set_xticks(range(0,len(dd),30))
+# remove tick marks
+ax.xaxis.set_tick_params(size=0)
+ax.yaxis.set_tick_params(size=0)
+# change the color of the top and right spines to opaque gray
+ax.spines['right'].set_color((1,1,1))
+ax.spines['top'].set_color((1,1,1))
+# tweak the axis labels
+xlab = ax.xaxis.get_label()
+ylab = ax.yaxis.get_label()
+xlab.set_style('italic')
+xlab.set_size(10)
+ylab.set_style('italic')
+ylab.set_size(10)
+# tweak the title
+ttl = ax.title
+ttl.set_weight('bold')
