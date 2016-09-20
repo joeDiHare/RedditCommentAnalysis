@@ -7,6 +7,8 @@ import difflib
 from datetime import date, timedelta
 import matplotlib.pyplot as plt
 import string
+from itertools import groupby
+from collections import OrderedDict
 import numpy as np
 
 # script to read-in list of words
@@ -58,7 +60,7 @@ message_counts = Counter(sender)
 df = pandas.DataFrame.from_dict(message_counts, orient='index')
 df.plot(kind='bar')
 
-# WHO SENDD MORE MEDIA?
+# WHO SENT MORE MEDIA?
 mediaSender_counts = Counter(mediaSender)
 df2 = pandas.DataFrame.from_dict(mediaSender_counts, orient='index')
 df2.plot(kind='bar')
@@ -83,8 +85,6 @@ for u in range(0,len(users)):
     print(count[u])
     s = ''.join(ch for ch in ' '.join(bodyUsr[u]).lower() if ch not in punctuation)
     bodyCompact.append(s.split()) #compact version of body, all in one string
-
-
 
 
 # HOW MANY JINX?
@@ -122,17 +122,34 @@ noMsgPerDay=[]
 for d in dd:
     noMsgPerDay.append(dates.count(d.strftime('%d/%m/%Y')))
 
-from itertools import groupby
-grouped_L = [(k, sum(1 for i in g)) for k,g in groupby(noMsgPerDay)]
-counter=[]
-for n in grouped_L:
-    if n[0]==0:
-        counter.append(n[1])
-c = [n[1] for n in grouped_L if n[0] is 0]
+# WHAT DAYS DO WE MESSAGE LESS?
+# extract days with 0 messages
+grouped_L = [[k, sum(1 for i in g)] for k,g in groupby(noMsgPerDay)] #sum occurrences of consecutive numbers
+count_noMsg = [grouped_L[n][1] for n in range(0,len(grouped_L)) if grouped_L[n][0] is 0] # only looks at zeros
+ddays = [dd[n].strftime('%a') for n in range(0,len(noMsgPerDay)) if noMsgPerDay[n] is 0]
+week=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+ddaysCount = OrderedDict((w, ddays.count(w)) for w in week) #ddaysCount = {w:ddays.count(w) for w in week}
+# plot
+plt.bar(range(len(ddaysCount)), ddaysCount.values(), align='center')
+plt.xticks(range(len(ddaysCount)), ddaysCount.keys())
+plt.show()
 
-# how many messages per day?
-# df = pandas.DataFrame.from_dict(noMsgPerDay)
-# df.plot(kind='bar')
+# WHAT DAYS DO WE MESSAGE MORE?
+ddays = [[dd[n].strftime('%a'),noMsgPerDay[n]] for n in range(0,len(noMsgPerDay)) if noMsgPerDay[n] > 0]
+ddaysCount = OrderedDict((w, 0) for w in week)
+for d in ddays:
+    ddaysCount[d[0]]=ddaysCount[d[0]]+d[1]
+# plot
+plt.bar(range(len(ddaysCount)), ddaysCount.values(), align='center')
+plt.xticks(range(len(ddaysCount)), ddaysCount.keys())
+plt.show()
+
+ddaysCount = OrderedDict((w, ddays.count(w)) for w in week) #ddaysCount = {w:ddays.count(w) for w in week}
+# plot
+plt.bar(range(len(ddaysCount)), ddaysCount.values(), align='center')
+plt.xticks(range(len(ddaysCount)), ddaysCount.keys())
+plt.show()
+
 
 plt.figure(figsize=(12, 9))
 ax = plt.subplot(111)
