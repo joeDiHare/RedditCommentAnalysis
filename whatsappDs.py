@@ -46,22 +46,20 @@ print('[done]')
 
 users = list(set(sender))
 
+
 print("Create conversation lists... ", end="")
 # if the previous message is within LONG_BREAK_CON seconds and it is from the same sender, combine them in the same conversation
-# initialise
-ConvBody = [body[0]]; ConvSender = [sender[0]]; ConvDates = [dates[0]]; ConvDatesLong = [datesLong[0]]
+ConvBody = [body[0]]; ConvSender = [sender[0]]; ConvDates = [dates[0]]; ConvDatesLong = [datesLong[0]]# initialise
 ConvMessage = [message[0]]; ConvTime = [tm[0]]; ConvTimeEnd = [tm[0]]
-Conversations = []
+Conversations, LM = [],[]; RT2= [['user', -1]]; RT = [-1]; flag_new_conv=False
 bodylast = '(' + sender[0] + ') ' + body[0]
-RT = [-1]
 LONG_BREAK_CONV = 20 * 60 # time constant to consider a message as belonging to a new conversation
-LM = [],[]
 for n in range(1,len(tm)):
     if (datetime.datetime.strptime(tm[n], "%H:%M") - datetime.datetime.strptime(tm[n-1], "%H:%M")).seconds < LONG_BREAK_CONV \
     and sender[n]==sender[n-1]: # same sender, add to last message
         ConvBody[-1] = ConvBody[-1] + '. ' + body[n]
         ConvTimeEnd[-1] = tm[n]
-        bodylast = bodylast + '. ' + body[n]
+        bodylast = bodylast + '. ' + body[n] if bodylast!='' else  ' ('+sender[n]+') '+body[n]
     else: # break and start new msg in conversation
         ConvBody.append(body[n])
         ConvSender.append(sender[n])
@@ -71,11 +69,18 @@ for n in range(1,len(tm)):
         ConvMessage.append(message[n])
         ConvDatesLong.append(datesLong[n])
         bodylast = bodylast + ' (' + sender[n] + ') ' +ConvBody[-1]
+        if flag_new_conv:
+            RT2.append([sender[n],
+                        round((datetime.datetime.strptime(tm[n],"%H:%M")-datetime.datetime.strptime(ConvTimeEnd[-2],"%H:%M")).seconds/60)])
+            flag_new_conv = False
+        # else:
+        #     RT2.append([sender[n], -1])
         RT.append(round((datetime.datetime.strptime(tm[n],"%H:%M")-datetime.datetime.strptime(ConvTimeEnd[-2],"%H:%M")).seconds/60)) \
             if sender[n] != ConvSender[-2] else RT.append(-1)
         if (datetime.datetime.strptime(tm[n], "%H:%M") - datetime.datetime.strptime(tm[n-1], "%H:%M")).seconds >= LONG_BREAK_CONV:
             Conversations.append(bodylast)
             bodylast=''
+            flag_new_conv = True
 print('[done]')
 
 
@@ -85,6 +90,20 @@ FM = []
 for item in Conversations:
     FM.append(re.search(users_search, item).group())
 FM_counts = Counter(FM)
+
+# Find users' reaction times to initial message in conversation
+UsersRT, UsersRTall = [], []
+for user in users:
+    tmp=[]
+    for item in RT2:
+        if item[0]==user:
+            tmp.append(item[1])
+    UsersRTall.append(np.asarray(tmp))
+    UsersRT.append(sum(tmp)/len(tmp))
+# plot histogram of reaction times
+a = np.hstack(UsersRTall[0])
+plt.hist(a, bins='auto')  # plt.hist passes it's arguments to np.histogram
+plt.show()
 
 print('DATA ANALYSIS')
 print('Conversations between '+str(len(users))+' users:' + str(users))
