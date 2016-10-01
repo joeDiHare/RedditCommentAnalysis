@@ -12,10 +12,10 @@ from collections import OrderedDict
 import numpy as np
 
 # script to read-in list of words
-filename = "C:/Users/Stefano/Documents/chat.txt"
+filename = "/Users/joeDiHare/Documents/chat.txt"#"C:/Users/Stefano/Documents/chat.txt"
 MsgErr1 = 'Messages you send to this chat and calls are now secured with end-to-end encryption. Tap for more info.'
 MsgErr2 = '<Media omitted>'
-print("Reading chat conversation & data validation...      ", end="")
+print("Reading chat conversation & data validation... ", end="")
 results, mediaSender, mediaCaption = [], [], []
 with open(filename, newline='',encoding='UTF8') as inputfile:
     for row in csv.reader(inputfile):
@@ -30,12 +30,12 @@ with open(filename, newline='',encoding='UTF8') as inputfile:
                     results.append(row)
 print('[done]')
 
-print("Create lists...      ", end="")
+print("Create full message lists... ", end="")
 bodyraw, dates, body, datesLong, message, tm, sender = [],[],[],[],[],[],[]
 for item in results:
     match_date = re.search(r'(\d+/\d+/\d+)', ''.join(item))
     match_time = re.search(r'(\d+:\d+)', item[1])
-    datesLong.append(datetime.datetime.strptime(match_date.group(1) +' '+ match_time.group(1), "%d/%m/%Y %H:%M"))
+    datesLong.append(datetime.datetime.strptime(match_date.group(1) + ' ' + match_time.group(1), "%d/%m/%Y %H:%M"))
     dates.append(item[0])
     tm.append(match_time.group(1))
     sender.append(item[1].partition('-')[-1].partition(':')[0].strip())
@@ -44,8 +44,49 @@ for item in results:
     body.append(item[1].partition(':')[-1].partition(':')[-1].strip())
 print('[done]')
 
-print('DATA ANALYSIS')
 users = list(set(sender))
+
+print("Create conversation lists... ", end="")
+# if the previous message is within LONG_BREAK_CON seconds and it is from the same sender, combine them in the same conversation
+# initialise
+ConvBody = [body[0]]; ConvSender = [sender[0]]; ConvDates = [dates[0]]; ConvDatesLong = [datesLong[0]]
+ConvMessage = [message[0]]; ConvTime = [tm[0]]; ConvTimeEnd = [tm[0]]
+Conversations = []
+bodylast = '(' + sender[0] + ') ' + body[0]
+RT = [-1]
+LONG_BREAK_CONV = 20 * 60 # time constant to consider a message as belonging to a new conversation
+LM = [],[]
+for n in range(1,len(tm)):
+    if (datetime.datetime.strptime(tm[n], "%H:%M") - datetime.datetime.strptime(tm[n-1], "%H:%M")).seconds < LONG_BREAK_CONV \
+    and sender[n]==sender[n-1]: # same sender, add to last message
+        ConvBody[-1] = ConvBody[-1] + '. ' + body[n]
+        ConvTimeEnd[-1] = tm[n]
+        bodylast = bodylast + '. ' + body[n]
+    else: # break and start new msg in conversation
+        ConvBody.append(body[n])
+        ConvSender.append(sender[n])
+        ConvTimeEnd.append(tm[n])
+        ConvTime.append(tm[n])
+        ConvDates.append(dates[n])
+        ConvMessage.append(message[n])
+        ConvDatesLong.append(datesLong[n])
+        bodylast = bodylast + ' (' + sender[n] + ') ' +ConvBody[-1]
+        RT.append(round((datetime.datetime.strptime(tm[n],"%H:%M")-datetime.datetime.strptime(ConvTimeEnd[-2],"%H:%M")).seconds/60)) \
+            if sender[n] != ConvSender[-2] else RT.append(-1)
+        if (datetime.datetime.strptime(tm[n], "%H:%M") - datetime.datetime.strptime(tm[n-1], "%H:%M")).seconds >= LONG_BREAK_CONV:
+            Conversations.append(bodylast)
+            bodylast=''
+print('[done]')
+
+
+# Find first mover (FM) occurrences
+users_search = "|".join(users)
+FM = []
+for item in Conversations:
+    FM.append(re.search(users_search, item).group())
+FM_counts = Counter(FM)
+
+print('DATA ANALYSIS')
 print('Conversations between '+str(len(users))+' users:' + str(users))
 
 ind=[]
@@ -100,11 +141,12 @@ for u in range(0,len(users)):
     noWhy.append(bodyCompact[u].count('why'))
     for i in range(0,len(bodyCompact[u])-3):
         if bodyCompact[u][i] + ' ' + bodyCompact[u][i + 1] == "love you" \
-                or bodyCompact[u][i] + ' ' + bodyCompact[u][i + 1] == "luv you": #bodyCompact[u][i]+' '+bodyCompact[u][i+1]+' '+bodyCompact[u][i+2] == "i love you" or
+                or bodyCompact[u][i] + ' ' + bodyCompact[u][i + 1] == "luv you":
             noIloveU[u] += 1
-        if bodyCompact[u][i] + ' ' + bodyCompact[u][i + 1] == "hate you": #bodyCompact[u][i]+' '+bodyCompact[u][i+1]+' '+bodyCompact[u][i+2] == "i love you" or
+        if bodyCompact[u][i] + ' ' + bodyCompact[u][i + 1] == "hate you":
             noHateU[u] += 1
-    print(users[u] + " used the word 'love' " + str(noLove[u]) + " times, and said 'I love you' "+str(noIloveU[u])+" times, but also 'I hate you' "+str(noHateU[u])+" times.")
+    print(users[u] + " used the word 'love' " + str(noLove[u]) + " times, and said 'I love you' "+str(noIloveU[u]) +
+          " times, but also 'I hate you' "+str(noHateU[u])+" times.")
 
 # 0000000000000000000000000000000000000000000000000000000000000000000000
 # TIME ANALYSIS
@@ -145,7 +187,8 @@ for u in range(0, len(users)):
     ddays = [dd[n].strftime('%a') for n in range(0,len(noMsgPerDay[u])) if noMsgPerDay[u][n] is 0]
     ddaysCount.append(OrderedDict((w, ddays.count(w)) for w in week)) #ddaysCount = {w:ddays.count(w) for w in week}
     # plot
-    ax1[0].bar(range(len(ddaysCount[u])), ddaysCount[u].values(), color=cols[u],  width=.5, bottom= ddaysCount[u].values() if u>0 else [0]*7)
+    ax1[0].bar(range(len(ddaysCount[u])), ddaysCount[u].values(), color=cols[u],  width=.5, bottom=ddaysCount[u].values()
+    if u > 0 else [0]*7)
     plt.xticks(range(len(ddaysCount[u])), ddaysCount[u].keys())
 plt.ylabel('Occurrence'); plt.title('Number of times there were ZERO :( messages on a specific day of the week')
 plt.legend(users)
@@ -158,7 +201,8 @@ for u in range(0, len(users)):
     for d in ddays:
         ddaysCount[d[0]]=ddaysCount[d[0]]+d[1]
     noMsgPerWeekday.append(ddaysCount)
-    ax1[1].bar(range(len(noMsgPerWeekday[u])), noMsgPerWeekday[u].values(), color=cols[u], width=.5,bottom=noMsgPerWeekday[u].values() if u > 0 else [0] * 7)
+    ax1[1].bar(range(len(noMsgPerWeekday[u])), noMsgPerWeekday[u].values(), color=cols[u],
+               width=.5,bottom=noMsgPerWeekday[u].values() if u > 0 else [0] * 7)
     plt.xticks(range(len(noMsgPerWeekday[u])), noMsgPerWeekday[u].keys())
 plt.ylabel('Occurrence'); plt.title('Messaging during the week')
 plt.show()
@@ -174,7 +218,7 @@ for u in range(0, len(users)):
     for t in hours:
         tmp.append(sum([tm[n][:2].count(t) for n in range(0,len(tm)) if ind[u][n]]))
     noMsgPerHour.append(tmp)
-    ax2.bar(u*width+np.arange(0,len(noMsgPerHour[u])), noMsgPerHour[u], color=cols[u], width=width)#,bottom=noMsgPerHour[u-1] if u > 0 else [0] * 24)
+    ax2.bar(u*width+np.arange(0,len(noMsgPerHour[u])), noMsgPerHour[u], color=cols[u], width=width)
     plt.xticks(np.arange(0,len(noMsgPerHour[u])), hours)
 plt.ylabel('Occurrence'); plt.xlabel('Hour of the day'); plt.title('Messaging during the day')
 plt.legend(users)
