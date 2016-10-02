@@ -100,10 +100,11 @@ for user in users:
             tmp.append(item[1])
     UsersRTall.append(np.asarray(tmp))
     UsersRT.append(sum(tmp)/len(tmp))
+    print('The median reaction time for '+user+' is '+str(np.median(np.asarray(tmp)))+' minutes')
 # plot histogram of reaction times
-a = np.hstack(UsersRTall[0])
-plt.hist(a, bins='auto')  # plt.hist passes it's arguments to np.histogram
-plt.show()
+# a = np.hstack(UsersRTall[0])
+# plt.hist(a, bins='auto')  # plt.hist passes it's arguments to np.histogram
+# plt.show()
 
 print('DATA ANALYSIS')
 print('Conversations between '+str(len(users))+' users:' + str(users))
@@ -111,12 +112,12 @@ print('Conversations between '+str(len(users))+' users:' + str(users))
 ind=[]
 for u in range(0,len(users)):
     indt=[]
-    for n in sender:
+    for n in ConvSender:
         indt.append(True) if n==users[u] else indt.append(False)
     ind.append(indt)
 
 # WHO MESSAGED THE MOST?
-message_counts = Counter(sender)
+message_counts = Counter(ConvSender)
 df = pandas.DataFrame.from_dict(message_counts, orient='index')
 df.plot(kind='bar')
 
@@ -140,7 +141,7 @@ for u in range(0,len(users)):
     bodyUsr.append([body[i] for i, x in enumerate(ind[u]) if x])
     NoWrdsUsr.append(len(''.join([body[i] for i, x in enumerate(ind[u]) if x]).split(' ')))
 
-    print('\nTF-IDF Analysis for user: ' + users[u] )
+    print('\nWord frequency Analysis for user: ' + users[u] )
     count.append(Counter(word for word in ' '.join(bodyUsr[u]).lower().split() if word not in stopwords).most_common(20))
     print(count[u])
     s = ''.join(ch for ch in ' '.join(bodyUsr[u]).lower() if ch not in punctuation)
@@ -171,25 +172,25 @@ for u in range(0,len(users)):
 # TIME ANALYSIS
 # find unique dates with messages
 Duniq=['initialize']
-for n in dates:
+for n in ConvDates:
     Duniq.append(n) if Duniq[-1]!=n else ''
 Duniq.pop(0)
 
 #Dates for user
 datesUser=[]
 for u in range(0,len(users)):
-    tmp = [dates[n] for n in range(0, len(dates)) if ind[u][n]]
+    tmp = [ConvDates[n] for n in range(0, len(ConvDates)) if ind[u][n]]
     datesUser.append(tmp)
 
 # a list containing all uniques days of the dates from
-d1 = date(int(dates[0][-4:10]),int(dates[0][3:5]),int(dates[0][0:2]))
-d2 = date(int(dates[-1][-4:10]),int(dates[-1][3:5]),int(dates[-1][0:2]))
+d1 = date(int(ConvDates[0][-4:10]),int(ConvDates[0][3:5]),int(ConvDates[0][0:2]))
+d2 = date(int(ConvDates[-1][-4:10]),int(ConvDates[-1][3:5]),int(ConvDates[-1][0:2]))
 dd = [d1 + timedelta(days=x) for x in range((d2-d1).days + 1)]
 noMsgPerDay = []
 for u in range(0, len(users)):
     tmp = []
     for d in dd:
-        tmp.append(dates.count(d.strftime('%d/%m/%Y')))
+        tmp.append(ConvDates.count(d.strftime('%d/%m/%Y')))
     noMsgPerDay.append(tmp)
 
 # WHAT DAYS OF THE WEEK DO WE MESSAGE LESS or MORE?
@@ -235,7 +236,7 @@ width=.3
 for u in range(0, len(users)):
     tmp = []
     for t in hours:
-        tmp.append(sum([tm[n][:2].count(t) for n in range(0,len(tm)) if ind[u][n]]))
+        tmp.append(sum([ConvTime[n][:2].count(t) for n in range(0,len(ConvTime)) if ind[u][n]]))
     noMsgPerHour.append(tmp)
     ax2.bar(u*width+np.arange(0,len(noMsgPerHour[u])), noMsgPerHour[u], color=cols[u], width=width)
     plt.xticks(np.arange(0,len(noMsgPerHour[u])), hours)
