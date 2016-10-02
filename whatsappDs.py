@@ -10,6 +10,7 @@ import string
 from itertools import groupby
 from collections import OrderedDict
 import numpy as np
+from wordcloud import WordCloud
 
 # script to read-in list of words
 filename = "/Users/joeDiHare/Documents/chat.txt"#"C:/Users/Stefano/Documents/chat.txt"
@@ -44,16 +45,13 @@ for item in results:
     body.append(item[1].partition(':')[-1].partition(':')[-1].strip())
 print('[done]')
 
-users = list(set(sender))
-
-
 print("Create conversation lists... ", end="")
 # if the previous message is within LONG_BREAK_CON seconds and it is from the same sender, combine them in the same conversation
 ConvBody = [body[0]]; ConvSender = [sender[0]]; ConvDates = [dates[0]]; ConvDatesLong = [datesLong[0]]# initialise
 ConvMessage = [message[0]]; ConvTime = [tm[0]]; ConvTimeEnd = [tm[0]]
-Conversations, LM = [],[]; RT2= [['user', -1]]; RT = [-1]; flag_new_conv=False
+Conversations, LM = [],[]; RT= [['user', -1]]; flag_new_conv=False
 bodylast = '(' + sender[0] + ') ' + body[0]
-LONG_BREAK_CONV = 20 * 60 # time constant to consider a message as belonging to a new conversation
+LONG_BREAK_CONV = 30 * 60 # time constant to consider a message as belonging to a new conversation
 for n in range(1,len(tm)):
     if (datetime.datetime.strptime(tm[n], "%H:%M") - datetime.datetime.strptime(tm[n-1], "%H:%M")).seconds < LONG_BREAK_CONV \
     and sender[n]==sender[n-1]: # same sender, add to last message
@@ -70,13 +68,11 @@ for n in range(1,len(tm)):
         ConvDatesLong.append(datesLong[n])
         bodylast = bodylast + ' (' + sender[n] + ') ' +ConvBody[-1]
         if flag_new_conv:
-            RT2.append([sender[n],
+            RT.append([sender[n],
                         round((datetime.datetime.strptime(tm[n],"%H:%M")-datetime.datetime.strptime(ConvTimeEnd[-2],"%H:%M")).seconds/60)])
             flag_new_conv = False
-        # else:
-        #     RT2.append([sender[n], -1])
-        RT.append(round((datetime.datetime.strptime(tm[n],"%H:%M")-datetime.datetime.strptime(ConvTimeEnd[-2],"%H:%M")).seconds/60)) \
-            if sender[n] != ConvSender[-2] else RT.append(-1)
+        # RT.append(round((datetime.datetime.strptime(tm[n],"%H:%M")-datetime.datetime.strptime(ConvTimeEnd[-2],"%H:%M")).seconds/60)) \
+        #     if sender[n] != ConvSender[-2] else RT.append(-1)
         if (datetime.datetime.strptime(tm[n], "%H:%M") - datetime.datetime.strptime(tm[n-1], "%H:%M")).seconds >= LONG_BREAK_CONV:
             Conversations.append(bodylast)
             bodylast=''
@@ -84,18 +80,24 @@ for n in range(1,len(tm)):
 print('[done]')
 
 
+print('\n\n~~~~~~~~~~~~~~~~~~~ DATA ANALYSIS ~~~~~~~~~~~~~~~~~~~~\n')
+users = list(set(sender))
+print('Conversations between '+str(len(users))+' users:' + str(users))
+
 # Find first mover (FM) occurrences
 users_search = "|".join(users)
 FM = []
 for item in Conversations:
     FM.append(re.search(users_search, item).group())
 FM_counts = Counter(FM)
+for user in users:
+    print(user + " started a conversation " + str(round(100*FM_counts[user]/sum(Counter(FM_counts).values()))) + "% of the times.")
 
 # Find users' reaction times to initial message in conversation
 UsersRT, UsersRTall = [], []
 for user in users:
     tmp=[]
-    for item in RT2:
+    for item in RT:
         if item[0]==user:
             tmp.append(item[1])
     UsersRTall.append(np.asarray(tmp))
@@ -103,11 +105,10 @@ for user in users:
     print('The median reaction time for '+user+' is '+str(np.median(np.asarray(tmp)))+' minutes')
 # plot histogram of reaction times
 # a = np.hstack(UsersRTall[0])
+# fig1 = plt.figure(1)
 # plt.hist(a, bins='auto')  # plt.hist passes it's arguments to np.histogram
 # plt.show()
-
-print('DATA ANALYSIS')
-print('Conversations between '+str(len(users))+' users:' + str(users))
+# fig1.savefig('RT.png')
 
 ind=[]
 for u in range(0,len(users)):
@@ -118,13 +119,24 @@ for u in range(0,len(users)):
 
 # WHO MESSAGED THE MOST?
 message_counts = Counter(ConvSender)
+fig2a = plt.figure(0, figsize=(4,4))
+ax = plt.subplot(111)
 df = pandas.DataFrame.from_dict(message_counts, orient='index')
-df.plot(kind='bar')
+df.plot.pie(subplots=True, ax=ax, rot=90)
+plt.title("Who Messaged the Most?")
+ax.legend().set_visible(False)
+fig2a.savefig('WhoMessagedTheMost.png')
+plt.close()
 
 # WHO SENT MORE MEDIA?
 mediaSender_counts = Counter(mediaSender)
+fig2b = plt.figure(figsize=(6,4))
+ax = plt.subplot(111)
 df2 = pandas.DataFrame.from_dict(mediaSender_counts, orient='index')
-df2.plot(kind='bar')
+df2.plot(kind='bar', ax=ax, rot=0, color=['g','k'])
+ax.legend().set_visible(False)
+fig2b.savefig('WhoSentMoreMedia.png')
+plt.close()
 
 for u in users:
     print(u+' sent ' +str(message_counts[u])+' messages and '+str(mediaSender_counts[u])+' images/videos.')
@@ -135,7 +147,7 @@ filename = 'stopwords.txt'; stopwords = []
 with open(filename, newline='',encoding='UTF8') as inputfile:
     for row in csv.reader(inputfile):
         stopwords.append(row[0].lower())
-NoWrdsUsr, bodyUsr, bodyCompact, count =[],[],[],[]
+NoWrdsUsr, bodyUsr, bodyCompact, count = [], [], [], []
 punctuation = set(string.punctuation)
 for u in range(0,len(users)):
     bodyUsr.append([body[i] for i, x in enumerate(ind[u]) if x])
@@ -147,6 +159,14 @@ for u in range(0,len(users)):
     s = ''.join(ch for ch in ' '.join(bodyUsr[u]).lower() if ch not in punctuation)
     bodyCompact.append(s.split()) #compact version of body, all in one string
 
+    #Wordles
+    text_user = ' '.join(bodyUsr[u]).lower()
+    wordcloud = WordCloud(max_font_size=40, relative_scaling=.5).generate(text_user)
+    fig3 = plt.figure()
+    plt.imshow(wordcloud)
+    plt.axis("off")
+    fig3.savefig(users[u] + '_wordle.png')
+    plt.close()
 
 # HOW MANY JINX?
 jinxNo = []
@@ -168,7 +188,6 @@ for u in range(0,len(users)):
     print(users[u] + " used the word 'love' " + str(noLove[u]) + " times, and said 'I love you' "+str(noIloveU[u]) +
           " times, but also 'I hate you' "+str(noHateU[u])+" times.")
 
-# 0000000000000000000000000000000000000000000000000000000000000000000000
 # TIME ANALYSIS
 # find unique dates with messages
 Duniq=['initialize']
@@ -197,8 +216,7 @@ for u in range(0, len(users)):
 # subplot(1) LESS
 #  extract days with 0 messages
 week=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-plt.figure(figsize=(10, 9))
-f, ax1 = plt.subplots(2, sharex=True)
+fig4, ax1 = plt.subplots(2, sharex=True)
 cols = [[.5,.5,.8,.3],[.5,.6,.1,.3],'b','y','r','g']
 ddaysCount = []
 for u in range(0, len(users)):
@@ -210,11 +228,13 @@ for u in range(0, len(users)):
     ax1[0].bar(range(len(ddaysCount[u])), ddaysCount[u].values(), color=cols[u],  width=.5, bottom=ddaysCount[u].values()
     if u > 0 else [0]*7)
     plt.xticks(range(len(ddaysCount[u])), ddaysCount[u].keys())
-plt.ylabel('Occurrence'); plt.title('Number of times there were ZERO :( messages on a specific day of the week')
-plt.legend(users)
+    plt.ylabel('Occurrence'); plt.title('Number of times there were ZERO :( messages on a specific day of the week')
+    plt.legend(users)
+
 # subplot(2) MORE
 #  WHAT DAYS OF THE WEEK DO WE MESSAGE MORE?
 noMsgPerWeekday=[]
+fig5a = plt.figure(figsize=(10,4))
 for u in range(0, len(users)):
     ddays = [[dd[n].strftime('%a'),noMsgPerDay[u][n]] for n in range(0,len(noMsgPerDay[u])) if noMsgPerDay[u][n] > 0]
     ddaysCount = OrderedDict((w, 0) for w in week)
@@ -224,12 +244,13 @@ for u in range(0, len(users)):
     ax1[1].bar(range(len(noMsgPerWeekday[u])), noMsgPerWeekday[u].values(), color=cols[u],
                width=.5,bottom=noMsgPerWeekday[u].values() if u > 0 else [0] * 7)
     plt.xticks(range(len(noMsgPerWeekday[u])), noMsgPerWeekday[u].keys())
-plt.ylabel('Occurrence'); plt.title('Messaging during the week')
-plt.show()
+    plt.ylabel('Occurrence'); plt.title('Messaging during the week')
+fig5a.savefig('weekdays.png')
+plt.close()
 
 # WHAT HOUR OF THE DAY WE MESSAGE MORE?
 hours=['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23']
-# plt.figure(figsize=(10, 9))
+fig5b = plt.figure(figsize=(10, 9))
 ax2 = plt.subplot(111)
 noMsgPerHour=[]
 width=.3
@@ -242,10 +263,11 @@ for u in range(0, len(users)):
     plt.xticks(np.arange(0,len(noMsgPerHour[u])), hours)
 plt.ylabel('Occurrence'); plt.xlabel('Hour of the day'); plt.title('Messaging during the day')
 plt.legend(users)
-plt.show()
+fig5b.savefig('dayshour.png')
+plt.close()
 
 ## PLOT Message Distribution over period
-plt.figure(figsize=(12, 9))
+fig6 = plt.figure(figsize=(12, 9))
 ax = plt.subplot(111)
 ax.spines["top"].set_visible(False);ax.spines["right"].set_visible(False)
 ax.get_xaxis().tick_bottom();ax.get_yaxis().tick_left()
@@ -282,3 +304,13 @@ ylab.set_size(10)
 # tweak the title
 ttl = ax.title
 ttl.set_weight('bold')
+fig6.savefig('message distribution.png')
+plt.close()
+
+# To do:
+# Module to: Check how words are stretched as in informal conversations
+# Module to: Find anniversries by freqeuncies of "happy birthday"
+# Module to: Swear words
+# Module to:
+# Module to:
+# Module to:
