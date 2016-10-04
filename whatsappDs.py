@@ -10,7 +10,9 @@ import string
 from itertools import groupby
 from collections import OrderedDict
 import numpy as np
+from matplotlib.backends.backend_pdf import PdfPages
 from wordcloud import WordCloud
+import pdfkit
 
 # script to read-in list of words
 filename = "/Users/joeDiHare/Documents/chat.txt"#"C:/Users/Stefano/Documents/chat.txt"
@@ -81,8 +83,12 @@ print('[done]')
 
 
 print('\n\n~~~~~~~~~~~~~~~~~~~ DATA ANALYSIS ~~~~~~~~~~~~~~~~~~~~\n')
+do_stages = [1]
+OutputPdf = PdfPages(filename='outputWA.pdf')
 users = list(set(sender))
 print('Conversations between '+str(len(users))+' users:' + str(users))
+
+# pdfkit.from_string('<b>Hello</b>!', 'out.pdf')  # Is your requirement?
 
 # Find first mover (FM) occurrences
 users_search = "|".join(users)
@@ -105,7 +111,7 @@ for user in users:
     print('The median reaction time for '+user+' is '+str(np.median(np.asarray(tmp)))+' minutes')
 # plot histogram of reaction times
 # a = np.hstack(UsersRTall[0])
-# fig1 = plt.figure(1)
+# fig1 = plt.figure(figsize=(6,4))
 # plt.hist(a, bins='auto')  # plt.hist passes it's arguments to np.histogram
 # plt.show()
 # fig1.savefig('RT.png')
@@ -118,75 +124,86 @@ for u in range(0,len(users)):
     ind.append(indt)
 
 # WHO MESSAGED THE MOST?
-message_counts = Counter(ConvSender)
-fig2a = plt.figure(0, figsize=(4,4))
-ax = plt.subplot(111)
-df = pandas.DataFrame.from_dict(message_counts, orient='index')
-df.plot.pie(subplots=True, ax=ax, rot=90)
-plt.title("Who Messaged the Most?")
-ax.legend().set_visible(False)
-fig2a.savefig('WhoMessagedTheMost.png')
-plt.close()
-
-# WHO SENT MORE MEDIA?
-mediaSender_counts = Counter(mediaSender)
-fig2b = plt.figure(figsize=(6,4))
-ax = plt.subplot(111)
-df2 = pandas.DataFrame.from_dict(mediaSender_counts, orient='index')
-df2.plot(kind='bar', ax=ax, rot=0, color=['g','k'])
-ax.legend().set_visible(False)
-fig2b.savefig('WhoSentMoreMedia.png')
-plt.close()
-
-for u in users:
-    print(u+' sent ' +str(message_counts[u])+' messages and '+str(mediaSender_counts[u])+' images/videos.')
-
-# MOST COMMON 20 WORDS PER USER
-# script to read-in strop words
-filename = 'stopwords.txt'; stopwords = []
-with open(filename, newline='',encoding='UTF8') as inputfile:
-    for row in csv.reader(inputfile):
-        stopwords.append(row[0].lower())
-NoWrdsUsr, bodyUsr, bodyCompact, count = [], [], [], []
-punctuation = set(string.punctuation)
-for u in range(0,len(users)):
-    bodyUsr.append([body[i] for i, x in enumerate(ind[u]) if x])
-    NoWrdsUsr.append(len(''.join([body[i] for i, x in enumerate(ind[u]) if x]).split(' ')))
-
-    print('\nWord frequency Analysis for user: ' + users[u] )
-    count.append(Counter(word for word in ' '.join(bodyUsr[u]).lower().split() if word not in stopwords).most_common(20))
-    print(count[u])
-    s = ''.join(ch for ch in ' '.join(bodyUsr[u]).lower() if ch not in punctuation)
-    bodyCompact.append(s.split()) #compact version of body, all in one string
-
-    #Wordles
-    text_user = ' '.join(bodyUsr[u]).lower()
-    wordcloud = WordCloud(max_font_size=40, relative_scaling=.5).generate(text_user)
-    fig3 = plt.figure()
-    plt.imshow(wordcloud)
-    plt.axis("off")
-    fig3.savefig(users[u] + '_wordle.png')
+if 1 in do_stages:
+    message_counts = Counter(ConvSender)
+    fig2a = plt.figure(0, figsize=(6,4))
+    ax = plt.subplot(111)
+    df = pandas.DataFrame.from_dict(message_counts, orient='index')
+    df.plot.pie(subplots=True, ax=ax, rot=90)
+    plt.title("Who Messaged the Most?")
+    plt.xlabel("number of messages")
+    ax.legend().set_visible(False)
+    fig2a.savefig('WhoMessagedTheMost.png')
+    OutputPdf.savefig(fig2a)
     plt.close()
 
+# WHO SENT MORE MEDIA?
+if 2 in do_stages:
+    mediaSender_counts = Counter(mediaSender)
+    fig2b = plt.figure(figsize=(6,4))
+    ax = plt.subplot(111)
+    df2 = pandas.DataFrame.from_dict(mediaSender_counts, orient='index')
+    df2.plot(kind='bar', ax=ax, rot=0, color=['g','k'])
+    plt.title("Who sent more media messages?")
+    plt.xlabel("number of messages")
+    ax.legend().set_visible(False)
+    fig2b.savefig('WhoSentMoreMedia.png')
+    OutputPdf.savefig(fig2b)
+    plt.close()
+
+    for u in users:
+        print(u+' sent ' +str(message_counts[u])+' messages and '+str(mediaSender_counts[u])+' images/videos.')
+
+# MOST COMMON 20 WORDS PER USER
+if 3 in do_stages:
+    # script to read-in strop words
+    filename = 'stopwords.txt'; stopwords = []
+    with open(filename, newline='',encoding='UTF8') as inputfile:
+        for row in csv.reader(inputfile):
+            stopwords.append(row[0].lower())
+    NoWrdsUsr, bodyUsr, bodyCompact, count = [], [], [], []
+    punctuation = set(string.punctuation)
+    for u in range(0,len(users)):
+        bodyUsr.append([body[i] for i, x in enumerate(ind[u]) if x])
+        NoWrdsUsr.append(len(''.join([body[i] for i, x in enumerate(ind[u]) if x]).split(' ')))
+
+        print('\nWord frequency Analysis for user: ' + users[u] )
+        count.append(Counter(word for word in ' '.join(bodyUsr[u]).lower().split() if word not in stopwords).most_common(20))
+        print(count[u])
+        s = ''.join(ch for ch in ' '.join(bodyUsr[u]).lower() if ch not in punctuation)
+        bodyCompact.append(s.split()) #compact version of body, all in one string
+
+        #Wordles
+        text_user = ' '.join(bodyUsr[u]).lower()
+        wordcloud = WordCloud(max_font_size=40, relative_scaling=.5).generate(text_user)
+        fig3 = plt.figure(figsize=(6,2))
+        plt.imshow(wordcloud)
+        plt.axis("off")
+        fig3.savefig(users[u] + '_wordle.png')
+        OutputPdf.savefig(fig3)
+        plt.close()
+
 # HOW MANY JINX?
-jinxNo = []
-for u in range(0,len(users)):
-    jinxNo.append(len(difflib.get_close_matches('jinx', ' '.join(bodyUsr[u]).lower().split(), n=100, cutoff=.8)))
-    print(users[u] + ' jinxed ' + str(jinxNo[u]) + ' times.')
+if 4 in do_stages:
+    jinxNo = []
+    for u in range(0,len(users)):
+        jinxNo.append(len(difflib.get_close_matches('jinx', ' '.join(bodyUsr[u]).lower().split(), n=100, cutoff=.8)))
+        print(users[u] + ' jinxed ' + str(jinxNo[u]) + ' times.')
 
 # HOW MANY 'LOVE' or 'I LOVE YOU'?
-noLove, noWhy = [],[]; noHateU, noIloveU = [0]*len(users),[0]*len(users)
-for u in range(0,len(users)):
-    noLove.append(bodyCompact[u].count('love'))
-    noWhy.append(bodyCompact[u].count('why'))
-    for i in range(0,len(bodyCompact[u])-3):
-        if bodyCompact[u][i] + ' ' + bodyCompact[u][i + 1] == "love you" \
-                or bodyCompact[u][i] + ' ' + bodyCompact[u][i + 1] == "luv you":
-            noIloveU[u] += 1
-        if bodyCompact[u][i] + ' ' + bodyCompact[u][i + 1] == "hate you":
-            noHateU[u] += 1
-    print(users[u] + " used the word 'love' " + str(noLove[u]) + " times, and said 'I love you' "+str(noIloveU[u]) +
-          " times, but also 'I hate you' "+str(noHateU[u])+" times.")
+if 5 in do_stages:
+    noLove, noWhy = [],[]; noHateU, noIloveU = [0]*len(users),[0]*len(users)
+    for u in range(0,len(users)):
+        noLove.append(bodyCompact[u].count('love'))
+        noWhy.append(bodyCompact[u].count('why'))
+        for i in range(0,len(bodyCompact[u])-3):
+            if bodyCompact[u][i] + ' ' + bodyCompact[u][i + 1] == "love you" \
+                    or bodyCompact[u][i] + ' ' + bodyCompact[u][i + 1] == "luv you":
+                noIloveU[u] += 1
+            if bodyCompact[u][i] + ' ' + bodyCompact[u][i + 1] == "hate you":
+                noHateU[u] += 1
+        print(users[u] + " used the word 'love' " + str(noLove[u]) + " times, and said 'I love you' "+str(noIloveU[u]) +
+              " times, but also 'I hate you' "+str(noHateU[u])+" times.")
 
 # TIME ANALYSIS
 # find unique dates with messages
@@ -213,99 +230,106 @@ for u in range(0, len(users)):
     noMsgPerDay.append(tmp)
 
 # WHAT DAYS OF THE WEEK DO WE MESSAGE LESS or MORE?
-# subplot(1) LESS
-#  extract days with 0 messages
-week=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-fig4, ax1 = plt.subplots(2, sharex=True)
-cols = [[.5,.5,.8,.3],[.5,.6,.1,.3],'b','y','r','g']
-ddaysCount = []
-for u in range(0, len(users)):
-    grouped_L = [[k, sum(1 for i in g)] for k,g in groupby(noMsgPerDay[u])] #sum occurrences of consecutive numbers
-    count_noMsg = [grouped_L[n][1] for n in range(0,len(grouped_L)) if grouped_L[n][0] is 0] # only looks at zeros
-    ddays = [dd[n].strftime('%a') for n in range(0,len(noMsgPerDay[u])) if noMsgPerDay[u][n] is 0]
-    ddaysCount.append(OrderedDict((w, ddays.count(w)) for w in week)) #ddaysCount = {w:ddays.count(w) for w in week}
-    # plot
-    ax1[0].bar(range(len(ddaysCount[u])), ddaysCount[u].values(), color=cols[u],  width=.5, bottom=ddaysCount[u].values()
-    if u > 0 else [0]*7)
-    plt.xticks(range(len(ddaysCount[u])), ddaysCount[u].keys())
-    plt.ylabel('Occurrence'); plt.title('Number of times there were ZERO :( messages on a specific day of the week')
-    plt.legend(users)
-
-# subplot(2) MORE
-#  WHAT DAYS OF THE WEEK DO WE MESSAGE MORE?
-noMsgPerWeekday=[]
-fig5a = plt.figure(figsize=(10,4))
-for u in range(0, len(users)):
-    ddays = [[dd[n].strftime('%a'),noMsgPerDay[u][n]] for n in range(0,len(noMsgPerDay[u])) if noMsgPerDay[u][n] > 0]
-    ddaysCount = OrderedDict((w, 0) for w in week)
-    for d in ddays:
-        ddaysCount[d[0]]=ddaysCount[d[0]]+d[1]
-    noMsgPerWeekday.append(ddaysCount)
-    ax1[1].bar(range(len(noMsgPerWeekday[u])), noMsgPerWeekday[u].values(), color=cols[u],
-               width=.5,bottom=noMsgPerWeekday[u].values() if u > 0 else [0] * 7)
-    plt.xticks(range(len(noMsgPerWeekday[u])), noMsgPerWeekday[u].keys())
-    plt.ylabel('Occurrence'); plt.title('Messaging during the week')
-fig5a.savefig('weekdays.png')
-plt.close()
+if 6 in do_stages:
+    # subplot(1) LESS
+    #  extract days with 0 messages
+    week=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    fig4, ax1 = plt.subplots(2, figsize=(6,6), sharex=True)
+    cols = [[.5,.5,.8,.3],[.5,.6,.1,.3],'b','y','r','g']
+    ddaysCount = []
+    for u in range(0, len(users)):
+        grouped_L = [[k, sum(1 for i in g)] for k,g in groupby(noMsgPerDay[u])] #sum occurrences of consecutive numbers
+        count_noMsg = [grouped_L[n][1] for n in range(0,len(grouped_L)) if grouped_L[n][0] is 0] # only looks at zeros
+        ddays = [dd[n].strftime('%a') for n in range(0,len(noMsgPerDay[u])) if noMsgPerDay[u][n] is 0]
+        ddaysCount.append(OrderedDict((w, ddays.count(w)) for w in week)) #ddaysCount = {w:ddays.count(w) for w in week}
+        # plot
+        ax1[0].bar(range(len(ddaysCount[u])), ddaysCount[u].values(), color=cols[u],  width=.5, bottom=ddaysCount[u].values()
+        if u > 0 else [0]*7)
+        plt.xticks(range(len(ddaysCount[u])), ddaysCount[u].keys())
+        plt.ylabel('Occurrence'); plt.title('Number of times there were ZERO :( messages on a specific day of the week')
+        plt.legend(users)
+    # subplot(2) MORE
+    #  WHAT DAYS OF THE WEEK DO WE MESSAGE MORE?
+    noMsgPerWeekday=[]
+    for u in range(0, len(users)):
+        ddays = [[dd[n].strftime('%a'),noMsgPerDay[u][n]] for n in range(0,len(noMsgPerDay[u])) if noMsgPerDay[u][n] > 0]
+        ddaysCount = OrderedDict((w, 0) for w in week)
+        for d in ddays:
+            ddaysCount[d[0]]=ddaysCount[d[0]]+d[1]
+        noMsgPerWeekday.append(ddaysCount)
+        ax1[1].bar(range(len(noMsgPerWeekday[u])), noMsgPerWeekday[u].values(), color=cols[u],
+                   width=.5,bottom=noMsgPerWeekday[u].values() if u > 0 else [0] * 7)
+        plt.xticks(range(len(noMsgPerWeekday[u])), noMsgPerWeekday[u].keys())
+        plt.ylabel('Occurrence'); plt.title('Messaging during the week')
+    fig4.savefig('weekdays.png')
+    OutputPdf.savefig(fig4)
+    plt.close()
 
 # WHAT HOUR OF THE DAY WE MESSAGE MORE?
 hours=['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23']
-fig5b = plt.figure(figsize=(10, 9))
-ax2 = plt.subplot(111)
-noMsgPerHour=[]
-width=.3
-for u in range(0, len(users)):
-    tmp = []
-    for t in hours:
-        tmp.append(sum([ConvTime[n][:2].count(t) for n in range(0,len(ConvTime)) if ind[u][n]]))
-    noMsgPerHour.append(tmp)
-    ax2.bar(u*width+np.arange(0,len(noMsgPerHour[u])), noMsgPerHour[u], color=cols[u], width=width)
-    plt.xticks(np.arange(0,len(noMsgPerHour[u])), hours)
-plt.ylabel('Occurrence'); plt.xlabel('Hour of the day'); plt.title('Messaging during the day')
-plt.legend(users)
-fig5b.savefig('dayshour.png')
-plt.close()
+if 7 in do_stages:
+    fig5b = plt.figure(figsize=(6, 6))
+    ax2 = plt.subplot(111)
+    noMsgPerHour=[]
+    width=.3
+    for u in range(0, len(users)):
+        tmp = []
+        for t in hours:
+            tmp.append(sum([ConvTime[n][:2].count(t) for n in range(0,len(ConvTime)) if ind[u][n]]))
+        noMsgPerHour.append(tmp)
+        ax2.bar(u*width+np.arange(0,len(noMsgPerHour[u])), noMsgPerHour[u], color=cols[u], width=width)
+        plt.xticks(np.arange(0,len(noMsgPerHour[u])), hours)
+    plt.ylabel('Occurrence'); plt.xlabel('Hour of the day'); plt.title('Messaging during the day')
+    plt.legend(users)
+    fig5b.savefig('dayshour.png')
+    OutputPdf.savefig(fig5b)
+    plt.close()
 
 ## PLOT Message Distribution over period
-fig6 = plt.figure(figsize=(12, 9))
-ax = plt.subplot(111)
-ax.spines["top"].set_visible(False);ax.spines["right"].set_visible(False)
-ax.get_xaxis().tick_bottom();ax.get_yaxis().tick_left()
-for u in range(0,len(users)):
-    xdata = range(0,len(dd))
-    ydata1 = noMsgPerDay[u-1] if u>0 else [0]*len(dd)
-    ydata2 = [sum(x) for x in zip(noMsgPerDay[u], noMsgPerDay[u-1])] if u>0 else noMsgPerDay[u]
-    l = ax.fill_between(xdata,  ydata1, ydata2, facecolor=cols[u], alpha=0.5)
-    # change the fill color, edge color and thickness
-    # l.set_facecolors([[.5,.5,.8,.3]])
-    l.set_edgecolors([[0, 0, .5, .3]])
-    l.set_linewidths([.1])
-ax.set_xlabel('Day posting', fontsize=16)
-ax.set_ylabel('Number of messages', fontsize=16)
-ax.set_title('Message Distribution', fontsize=18)
-# set the limits
-ax.set_xlim(0, len(dd))
-ax.set_ylim(0, max(ydata2) + 5)
-# add more ticks
-ax.set_xticks(range(0,len(dd),30))
-# remove tick marks
-ax.xaxis.set_tick_params(size=0)
-ax.yaxis.set_tick_params(size=0)
-# change the color of the top and right spines to opaque gray
-ax.spines['right'].set_color((1,1,1))
-ax.spines['top'].set_color((1,1,1))
-# tweak the axis labels
-xlab = ax.xaxis.get_label()
-ylab = ax.yaxis.get_label()
-xlab.set_style('italic')
-xlab.set_size(10)
-ylab.set_style('italic')
-ylab.set_size(10)
-# tweak the title
-ttl = ax.title
-ttl.set_weight('bold')
-fig6.savefig('message distribution.png')
-plt.close()
+if 8 in do_stages:
+    fig6 = plt.figure(figsize=(6, 5))
+    ax = plt.subplot(111)
+    ax.spines["top"].set_visible(False);ax.spines["right"].set_visible(False)
+    ax.get_xaxis().tick_bottom();ax.get_yaxis().tick_left()
+    for u in range(0,len(users)):
+        xdata = range(0,len(dd))
+        ydata1 = noMsgPerDay[u-1] if u>0 else [0]*len(dd)
+        ydata2 = [sum(x) for x in zip(noMsgPerDay[u], noMsgPerDay[u-1])] if u>0 else noMsgPerDay[u]
+        l = ax.fill_between(xdata,  ydata1, ydata2, facecolor=cols[u], alpha=0.5)
+        # change the fill color, edge color and thickness
+        # l.set_facecolors([[.5,.5,.8,.3]])
+        l.set_edgecolors([[0, 0, .5, .3]])
+        l.set_linewidths([.1])
+    ax.set_xlabel('Day posting', fontsize=16)
+    ax.set_ylabel('Number of messages', fontsize=16)
+    ax.set_title('Message Distribution', fontsize=18)
+    # set the limits
+    ax.set_xlim(0, len(dd))
+    ax.set_ylim(0, max(ydata2) + 5)
+    # add more ticks
+    ax.set_xticks(range(0,len(dd),30))
+    # remove tick marks
+    ax.xaxis.set_tick_params(size=0)
+    ax.yaxis.set_tick_params(size=0)
+    # change the color of the top and right spines to opaque gray
+    ax.spines['right'].set_color((1,1,1))
+    ax.spines['top'].set_color((1,1,1))
+    # tweak the axis labels
+    xlab = ax.xaxis.get_label()
+    ylab = ax.yaxis.get_label()
+    xlab.set_style('italic')
+    xlab.set_size(10)
+    ylab.set_style('italic')
+    ylab.set_size(10)
+    # tweak the title
+    ttl = ax.title
+    ttl.set_weight('bold')
+    fig6.savefig('message distribution.png')
+    OutputPdf.savefig(fig6)
+    plt.close()
+
+
+OutputPdf.close()
 
 # To do:
 # Module to: Check how words are stretched as in informal conversations
