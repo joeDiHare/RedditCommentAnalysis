@@ -182,7 +182,7 @@ if 3 in do_stages:
         text_user = ' '.join(bodyUsr[u]).lower()
         wc = WordCloud(max_font_size=40, relative_scaling=.5, background_color="white",
                        max_words=50, stopwords=stopwords, mask=circle_mask).generate(text_user)#mask=alice_mask,
-        fig3 = plt.figure(figsize=(6,2))
+        fig3 = plt.figure(figsize=(6,6))
         plt.imshow(wc)
         plt.axis("off")
         fig3.savefig(users[u] + '_wordle.png')
@@ -339,6 +339,22 @@ if 8 in do_stages:
 
 OutputPdf.close()
 
+import nltk
+from nltk.collocations import *
+bigram_measures = nltk.collocations.BigramAssocMeasures()
+trigram_measures = nltk.collocations.TrigramAssocMeasures()
+
+# change this to read in your data
+finder = BigramCollocationFinder.from_words(
+   nltk.corpus.genesis.words('english-web.txt'))
+
+# only bigrams that appear 3+ times
+finder.apply_freq_filter(3)
+
+# return the 10 n-grams with the highest PMI
+finder.nbest(bigram_measures.pmi, 10)
+
+# Render html file
 env = Environment(loader=FileSystemLoader('templates'))
 template = env.get_template('index.html')
 output_from_parsed_template = template.render(no_users=len(users), do_stages=do_stages, users=users,
@@ -346,7 +362,6 @@ output_from_parsed_template = template.render(no_users=len(users), do_stages=do_
                                               message_counts=message_counts,mediaSender_counts=mediaSender_counts,
                                               jinxNo=jinxNo,
                                               noLove=noLove,noIloveU=noIloveU,noHateU=noHateU)
-
 # to save the results
 with open("OutputAnalysis.html", "w") as fh:
     fh.write(output_from_parsed_template)
