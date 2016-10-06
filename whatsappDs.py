@@ -13,16 +13,17 @@ import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from wordcloud import WordCloud
 import pdfkit
+from jinja2 import Template, Environment, FileSystemLoader
 
 # script to read-in list of words
 filename = "/Users/joeDiHare/Documents/chat.txt"#"C:/Users/Stefano/Documents/chat.txt"
 MsgErr1 = 'Messages you send to this chat and calls are now secured with end-to-end encryption. Tap for more info.'
 MsgErr2 = '<Media omitted>'
-print("Reading chat conversation & data validation... ", end="")
+print("Reading chat conversation & first data validation... ", end="")
 results, mediaSender, mediaCaption = [], [], []
 with open(filename, newline='',encoding='UTF8') as inputfile:
     for row in csv.reader(inputfile):
-        if row!=[]:#ignore empty lines
+        if row!=[]: #ignore empty lines
             if re.search(r'(\d+/\d+/\d+)', row[0]) is None: #if not a new sender, attach to previous
                 results[-1][-1] = results[-1][-1] + ' ' + row[0]
             elif row[1].partition('-')[-1].partition(':')[0].strip()!= MsgErr1: #remove error messages
@@ -73,8 +74,6 @@ for n in range(1,len(tm)):
             RT.append([sender[n],
                         round((datetime.datetime.strptime(tm[n],"%H:%M")-datetime.datetime.strptime(ConvTimeEnd[-2],"%H:%M")).seconds/60)])
             flag_new_conv = False
-        # RT.append(round((datetime.datetime.strptime(tm[n],"%H:%M")-datetime.datetime.strptime(ConvTimeEnd[-2],"%H:%M")).seconds/60)) \
-        #     if sender[n] != ConvSender[-2] else RT.append(-1)
         if (datetime.datetime.strptime(tm[n], "%H:%M") - datetime.datetime.strptime(tm[n-1], "%H:%M")).seconds >= LONG_BREAK_CONV:
             Conversations.append(bodylast)
             bodylast=''
@@ -83,12 +82,10 @@ print('[done]')
 
 
 print('\n\n~~~~~~~~~~~~~~~~~~~ DATA ANALYSIS ~~~~~~~~~~~~~~~~~~~~\n')
-do_stages = [1]
+do_stages = [1,2,3]
 OutputPdf = PdfPages(filename='outputWA.pdf')
 users = list(set(sender))
 print('Conversations between '+str(len(users))+' users:' + str(users))
-
-# pdfkit.from_string('<b>Hello</b>!', 'out.pdf')  # Is your requirement?
 
 # Find first mover (FM) occurrences
 users_search = "|".join(users)
@@ -126,7 +123,7 @@ for u in range(0,len(users)):
 # WHO MESSAGED THE MOST?
 if 1 in do_stages:
     message_counts = Counter(ConvSender)
-    fig2a = plt.figure(0, figsize=(6,4))
+    fig2a = plt.figure(0, figsize=(6,6))
     ax = plt.subplot(111)
     df = pandas.DataFrame.from_dict(message_counts, orient='index')
     df.plot.pie(subplots=True, ax=ax, rot=90)
@@ -153,6 +150,7 @@ if 2 in do_stages:
 
     for u in users:
         print(u+' sent ' +str(message_counts[u])+' messages and '+str(mediaSender_counts[u])+' images/videos.')
+        # OutputPdf.attach_note(text="hhhhhhhhhhhhhhh  <><hshshshs/b>   ksksksksks sjsjsnfskdb skbdskjf  a")
 
 # MOST COMMON 20 WORDS PER USER
 if 3 in do_stages:
@@ -328,13 +326,26 @@ if 8 in do_stages:
     OutputPdf.savefig(fig6)
     plt.close()
 
+# Time analysis over months
+
 
 OutputPdf.close()
 
+env = Environment(loader=FileSystemLoader('templates'))
+template = env.get_template('index.html')
+output_from_parsed_template = template.render(no_users=len(users), users=users,a_variable='hay')
+
+# to save the results
+with open("OutputAnalysis.html", "w") as fh:
+    fh.write(output_from_parsed_template)
+
+with open('OutputAnalysis.html') as f:
+    pdfkit.from_file(f, 'out.pdf')
+
 # To do:
 # Module to: Check how words are stretched as in informal conversations
-# Module to: Find anniversries by freqeuncies of "happy birthday"
+# Module to: Find anniversaries by frequencies of "happy birthday"
 # Module to: Swear words
-# Module to:
-# Module to:
+# Module to: Implement detection block for US/EU pattern
+# Module to: Add more stopwords
 # Module to:
