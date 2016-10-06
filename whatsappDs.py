@@ -11,9 +11,10 @@ from itertools import groupby
 from collections import OrderedDict
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
-from wordcloud import WordCloud
-import pdfkit
+from wordcloud import WordCloud, STOPWORDS
+from PIL import Image
 from jinja2 import Template, Environment, FileSystemLoader
+import pdfkit
 
 # script to read-in list of words
 filename = "/Users/joeDiHare/Documents/chat.txt"#"C:/Users/Stefano/Documents/chat.txt"
@@ -82,7 +83,7 @@ print('[done]')
 
 
 print('\n\n~~~~~~~~~~~~~~~~~~~ DATA ANALYSIS ~~~~~~~~~~~~~~~~~~~~\n')
-do_stages = [1,2,3]
+do_stages = [1,2,3,4,5,6,7,8]
 OutputPdf = PdfPages(filename='outputWA.pdf')
 users = list(set(sender))
 print('Conversations between '+str(len(users))+' users:' + str(users))
@@ -93,11 +94,13 @@ FM = []
 for item in Conversations:
     FM.append(re.search(users_search, item).group())
 FM_counts = Counter(FM)
+FM_users = []
 for user in users:
-    print(user + " started a conversation " + str(round(100*FM_counts[user]/sum(Counter(FM_counts).values()))) + "% of the times.")
+    FM_users.append(round(100*FM_counts[user]/sum(Counter(FM_counts).values())))
+    print(user + " started a conversation " + str(FM_users[-1]) + "% of the times.")
 
 # Find users' reaction times to initial message in conversation
-UsersRT, UsersRTall = [], []
+UsersRT, UsersRTall, UserRTmedian = [], [], []
 for user in users:
     tmp=[]
     for item in RT:
@@ -105,7 +108,8 @@ for user in users:
             tmp.append(item[1])
     UsersRTall.append(np.asarray(tmp))
     UsersRT.append(sum(tmp)/len(tmp))
-    print('The median reaction time for '+user+' is '+str(np.median(np.asarray(tmp)))+' minutes')
+    UserRTmedian.append(np.median(np.asarray(tmp)))
+    print('The median reaction time for '+user+' is '+str(UserRTmedian[-1])+' minutes')
 # plot histogram of reaction times
 # a = np.hstack(UsersRTall[0])
 # fig1 = plt.figure(figsize=(6,4))
@@ -153,9 +157,12 @@ if 2 in do_stages:
         # OutputPdf.attach_note(text="hhhhhhhhhhhhhhh  <><hshshshs/b>   ksksksksks sjsjsnfskdb skbdskjf  a")
 
 # MOST COMMON 20 WORDS PER USER
+circle_mask = np.array(Image.open("circle-mask.png"))
+# stwords = set(STOPWORDS)
+# stwords.add("said")
 if 3 in do_stages:
     # script to read-in strop words
-    filename = 'stopwords.txt'; stopwords = []
+    filename = 'stopwords_long.txt'; stopwords = []
     with open(filename, newline='',encoding='UTF8') as inputfile:
         for row in csv.reader(inputfile):
             stopwords.append(row[0].lower())
@@ -173,9 +180,10 @@ if 3 in do_stages:
 
         #Wordles
         text_user = ' '.join(bodyUsr[u]).lower()
-        wordcloud = WordCloud(max_font_size=40, relative_scaling=.5).generate(text_user)
+        wc = WordCloud(max_font_size=40, relative_scaling=.5, background_color="white",
+                       max_words=50, stopwords=stopwords, mask=circle_mask).generate(text_user)#mask=alice_mask,
         fig3 = plt.figure(figsize=(6,2))
-        plt.imshow(wordcloud)
+        plt.imshow(wc)
         plt.axis("off")
         fig3.savefig(users[u] + '_wordle.png')
         OutputPdf.savefig(fig3)
@@ -322,7 +330,7 @@ if 8 in do_stages:
     # tweak the title
     ttl = ax.title
     ttl.set_weight('bold')
-    fig6.savefig('message distribution.png')
+    fig6.savefig('message_distribution.png')
     OutputPdf.savefig(fig6)
     plt.close()
 
@@ -333,14 +341,19 @@ OutputPdf.close()
 
 env = Environment(loader=FileSystemLoader('templates'))
 template = env.get_template('index.html')
-output_from_parsed_template = template.render(no_users=len(users), users=users,a_variable='hay')
+output_from_parsed_template = template.render(no_users=len(users), do_stages=do_stages, users=users,
+                                              UserRTmedian=UserRTmedian, FM_users=FM_users,
+                                              message_counts=message_counts,mediaSender_counts=mediaSender_counts,
+                                              jinxNo=jinxNo,
+                                              noLove=noLove,noIloveU=noIloveU,noHateU=noHateU)
 
 # to save the results
 with open("OutputAnalysis.html", "w") as fh:
     fh.write(output_from_parsed_template)
-
-with open('OutputAnalysis.html') as f:
-    pdfkit.from_file(f, 'out.pdf')
+#
+# import pdfkit
+# with open('OutputAnalysis.html') as f:
+#     pdfkit.from_file(f, 'out.pdf')
 
 # To do:
 # Module to: Check how words are stretched as in informal conversations
@@ -348,4 +361,4 @@ with open('OutputAnalysis.html') as f:
 # Module to: Swear words
 # Module to: Implement detection block for US/EU pattern
 # Module to: Add more stopwords
-# Module to:
+# Module to: Convert html to pdf
