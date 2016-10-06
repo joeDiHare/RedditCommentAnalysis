@@ -344,9 +344,10 @@ from nltk.collocations import *
 bigram_measures = nltk.collocations.BigramAssocMeasures()
 trigram_measures = nltk.collocations.TrigramAssocMeasures()
 
-# change this to read in your data
-finder = BigramCollocationFinder.from_words(
-   nltk.corpus.genesis.words('english-web.txt'))
+# # change this to read in your data
+# finder = BigramCollocationFinder.from_words(
+#    nltk.corpus.genesis.words('english-web.txt'))
+finder = BigramCollocationFinder.from_words(' '.join(ConvBody))
 
 # only bigrams that appear 3+ times
 finder.apply_freq_filter(3)
