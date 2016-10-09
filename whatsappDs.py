@@ -341,19 +341,24 @@ OutputPdf.close()
 
 import nltk
 from nltk.collocations import *
+str_conv = ' '.join(ConvBody).translate(str.maketrans('().;!?', '      ')).split(' ')
+print('\nN=2 grams')
 bigram_measures = nltk.collocations.BigramAssocMeasures()
+finder = BigramCollocationFinder.from_words(str_conv)
+finder.apply_freq_filter(5)
+res = finder.nbest(bigram_measures.pmi, 10)
+for item in res:
+    print(item)
+print('\nN=3 grams')
 trigram_measures = nltk.collocations.TrigramAssocMeasures()
-
-# # change this to read in your data
-# finder = BigramCollocationFinder.from_words(
-#    nltk.corpus.genesis.words('english-web.txt'))
-finder = BigramCollocationFinder.from_words(' '.join(ConvBody))
-
+finder = TrigramCollocationFinder.from_words(str_conv)
 # only bigrams that appear 3+ times
-finder.apply_freq_filter(3)
-
+finder.apply_freq_filter(5)
 # return the 10 n-grams with the highest PMI
-finder.nbest(bigram_measures.pmi, 10)
+res = finder.nbest(trigram_measures.pmi, 10)
+for item in res:
+    print(item)
+
 
 # Render html file
 env = Environment(loader=FileSystemLoader('templates'))
