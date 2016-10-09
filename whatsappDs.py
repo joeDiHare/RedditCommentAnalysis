@@ -154,7 +154,6 @@ if 2 in do_stages:
 
     for u in users:
         print(u+' sent ' +str(message_counts[u])+' messages and '+str(mediaSender_counts[u])+' images/videos.')
-        # OutputPdf.attach_note(text="hhhhhhhhhhhhhhh  <><hshshshs/b>   ksksksksks sjsjsnfskdb skbdskjf  a")
 
 # MOST COMMON 20 WORDS PER USER
 circle_mask = np.array(Image.open("circle-mask.png"))
@@ -341,23 +340,29 @@ OutputPdf.close()
 
 import nltk
 from nltk.collocations import *
-str_conv = ' '.join(ConvBody).translate(str.maketrans('().;!?', '      ')).split(' ')
-print('\nN=2 grams')
-bigram_measures = nltk.collocations.BigramAssocMeasures()
-finder = BigramCollocationFinder.from_words(str_conv)
-finder.apply_freq_filter(5)
-res = finder.nbest(bigram_measures.pmi, 10)
-for item in res:
-    print(item)
-print('\nN=3 grams')
-trigram_measures = nltk.collocations.TrigramAssocMeasures()
-finder = TrigramCollocationFinder.from_words(str_conv)
-# only bigrams that appear 3+ times
-finder.apply_freq_filter(5)
-# return the 10 n-grams with the highest PMI
-res = finder.nbest(trigram_measures.pmi, 10)
-for item in res:
-    print(item)
+text = ' '.join(ConvBody).translate(str.maketrans('().;!?', '      '))
+text = text.lower()
+# text = re.sub(r'^https?:\/\/.*[\r\n]*', '', text, flags=re.MULTILINE)
+text = re.sub(r'\w+:\/{2}[\d\w-]+(\.[\d\w-]+)*(?:(?:\/[^\s/]*))*', '', text)
+str_conv = text.split(' ')
+FILTER_NO = 4
+for user in users:
+    print('\nN=2 grams')
+    bigram_measures = nltk.collocations.BigramAssocMeasures()
+    finder = BigramCollocationFinder.from_words(str_conv)
+    finder.apply_freq_filter(FILTER_NO)
+    res = finder.nbest(bigram_measures.pmi, 5)
+    for item in res:
+        print(item)
+    print('\nN=3 grams')
+    trigram_measures = nltk.collocations.TrigramAssocMeasures()
+    finder = TrigramCollocationFinder.from_words(str_conv)
+    # only bigrams that appear 3+ times
+    finder.apply_freq_filter(FILTER_NO)
+    # return the 10 n-grams with the highest PMI
+    res = finder.nbest(trigram_measures.pmi, 5)
+    for item in res:
+        print(item)
 
 
 # Render html file
