@@ -14,6 +14,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 from wordcloud import WordCloud, STOPWORDS
 from PIL import Image
 from jinja2 import Template, Environment, FileSystemLoader
+import nltk
+from nltk.collocations import *
 import pdfkit
 
 # script to read-in list of words
@@ -333,36 +335,47 @@ if 8 in do_stages:
     OutputPdf.savefig(fig6)
     plt.close()
 
+if 9 in do_stages:
+    FILTER_NO = 4
+    ngramsUsr = []
+    for u in range(0,len(users)):
+        text = ' '.join(bodyUsr[u]).translate(str.maketrans('().;!?', '      ')).lower()
+        text = re.sub(r'\w+:\/{2}[\d\w-]+(\.[\d\w-]+)*(?:(?:\/[^\s/]*))*', '', text)
+        str_conv = text.split(' ')
+
+        # print('\nN=2 grams')
+        bigram_measures = nltk.collocations.BigramAssocMeasures()
+        finder = BigramCollocationFinder.from_words(str_conv)
+        finder.apply_freq_filter(FILTER_NO)
+        res2 = finder.nbest(bigram_measures.pmi, 5)
+        # print('\nN=3 grams')
+        trigram_measures = nltk.collocations.TrigramAssocMeasures()
+        finder = TrigramCollocationFinder.from_words(str_conv)
+        # only bigrams that appear 3+ times
+        finder.apply_freq_filter(FILTER_NO)
+        # return the 10 n-grams with the highest PMI
+        res3 = finder.nbest(trigram_measures.pmi, 5)
+        ngrams = []
+        for item in res3:
+            tmp = ''
+            for wrd in item:
+                tmp = tmp + ' ' + wrd
+            ngrams.append(tmp)
+        for item in res2:
+            if any([set(item) >= set(res3[o]) for o in range(0,len(res3))]):
+                tmp = ''
+                for wrd in item:
+                    tmp = tmp + ' ' + wrd
+                ngrams.append(tmp.strip())
+        ngramsUsr.append(ngrams)
+        print(users[u] + "'s favourite expressions are: " + ' | '.join([k for k in ngrams]) + ';')
+
+
+
 # Time analysis over months
 
 
 OutputPdf.close()
-
-import nltk
-from nltk.collocations import *
-text = ' '.join(ConvBody).translate(str.maketrans('().;!?', '      '))
-text = text.lower()
-# text = re.sub(r'^https?:\/\/.*[\r\n]*', '', text, flags=re.MULTILINE)
-text = re.sub(r'\w+:\/{2}[\d\w-]+(\.[\d\w-]+)*(?:(?:\/[^\s/]*))*', '', text)
-str_conv = text.split(' ')
-FILTER_NO = 4
-for user in users:
-    print('\nN=2 grams')
-    bigram_measures = nltk.collocations.BigramAssocMeasures()
-    finder = BigramCollocationFinder.from_words(str_conv)
-    finder.apply_freq_filter(FILTER_NO)
-    res = finder.nbest(bigram_measures.pmi, 5)
-    for item in res:
-        print(item)
-    print('\nN=3 grams')
-    trigram_measures = nltk.collocations.TrigramAssocMeasures()
-    finder = TrigramCollocationFinder.from_words(str_conv)
-    # only bigrams that appear 3+ times
-    finder.apply_freq_filter(FILTER_NO)
-    # return the 10 n-grams with the highest PMI
-    res = finder.nbest(trigram_measures.pmi, 5)
-    for item in res:
-        print(item)
 
 
 # Render html file
