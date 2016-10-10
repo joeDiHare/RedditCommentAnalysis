@@ -19,7 +19,7 @@ from nltk.collocations import *
 import pdfkit
 
 # script to read-in list of words
-filename = "/Users/joeDiHare/Documents/chat.txt"#"C:/Users/Stefano/Documents/chat.txt"
+filename = "/Users/joeDiHare/chat.txt"
 MsgErr1 = 'Messages you send to this chat and calls are now secured with end-to-end encryption. Tap for more info.'
 MsgErr2 = '<Media omitted>'
 print("Reading chat conversation & first data validation... ", end="")
@@ -85,7 +85,7 @@ print('[done]')
 
 
 print('\n\n~~~~~~~~~~~~~~~~~~~ DATA ANALYSIS ~~~~~~~~~~~~~~~~~~~~\n')
-do_stages = [1,2,3,4,5,6,7,8]
+do_stages = [1,2,3,4,5,6,7,8,9]#1,2,3,4,5,6,7,8,9]
 OutputPdf = PdfPages(filename='outputWA.pdf')
 users = list(set(sender))
 print('Conversations between '+str(len(users))+' users:' + str(users))
@@ -161,7 +161,7 @@ if 2 in do_stages:
 circle_mask = np.array(Image.open("circle-mask.png"))
 # stwords = set(STOPWORDS)
 # stwords.add("said")
-if 3 in do_stages:
+if 3 in do_stages: #  dep on stage 1 and 2
     # script to read-in strop words
     filename = 'stopwords_long.txt'; stopwords = []
     with open(filename, newline='',encoding='UTF8') as inputfile:
@@ -335,41 +335,53 @@ if 8 in do_stages:
     OutputPdf.savefig(fig6)
     plt.close()
 
-if 9 in do_stages:
-    FILTER_NO = 4
+if 9 in do_stages: # depend on stage 3
+    FILTER_NO = 3
     ngramsUsr = []
     for u in range(0,len(users)):
         text = ' '.join(bodyUsr[u]).translate(str.maketrans('().;!?', '      ')).lower()
         text = re.sub(r'\w+:\/{2}[\d\w-]+(\.[\d\w-]+)*(?:(?:\/[^\s/]*))*', '', text)
-        str_conv = text.split(' ')
+        str_conv = list(filter(None, text.split(' '))) # remove empty strings
 
+        buffer_words4, buffer_words3 = [], []
+        for kk in range(4,len(str_conv)):
+            # buffer_words2.append(str_conv[kk-1] + ' ' + str_conv[kk])
+            buffer_words3.append(str_conv[kk - 2] + ' ' + str_conv[kk - 1] + ' ' + str_conv[kk])
+            buffer_words4.append(str_conv[kk - 3] + ' ' + str_conv[kk - 2] + ' ' + str_conv[kk - 1] + ' ' + str_conv[kk])
+
+        res4, res3 = Counter(buffer_words4).most_common(10), Counter(buffer_words3).most_common(10)
+        ngramsUsr.append([wrd[0] for wrd in res3])
+        print(users[u] + "'s favourite expressions are: " + ' | '.join([k for k in ngramsUsr[u]]) + ';')
+
+
+
+        # Ngram analysis, but not sure about the results I get...
         # print('\nN=2 grams')
-        bigram_measures = nltk.collocations.BigramAssocMeasures()
-        finder = BigramCollocationFinder.from_words(str_conv)
-        finder.apply_freq_filter(FILTER_NO)
-        res2 = finder.nbest(bigram_measures.pmi, 5)
-        # print('\nN=3 grams')
-        trigram_measures = nltk.collocations.TrigramAssocMeasures()
-        finder = TrigramCollocationFinder.from_words(str_conv)
-        # only bigrams that appear 3+ times
-        finder.apply_freq_filter(FILTER_NO)
-        # return the 10 n-grams with the highest PMI
-        res3 = finder.nbest(trigram_measures.pmi, 5)
-        ngrams = []
-        for item in res3:
-            tmp = ''
-            for wrd in item:
-                tmp = tmp + ' ' + wrd
-            ngrams.append(tmp)
-        for item in res2:
-            if any([set(item) >= set(res3[o]) for o in range(0,len(res3))]):
-                tmp = ''
-                for wrd in item:
-                    tmp = tmp + ' ' + wrd
-                ngrams.append(tmp.strip())
-        ngramsUsr.append(ngrams)
-        print(users[u] + "'s favourite expressions are: " + ' | '.join([k for k in ngrams]) + ';')
-
+        # bigram_measures = nltk.collocations.BigramAssocMeasures()
+        # finder = BigramCollocationFinder.from_words(str_conv)
+        # finder.apply_freq_filter(FILTER_NO)
+        # res2 = finder.nbest(bigram_measures.pmi, 5)
+        # # print('\nN=3 grams')
+        # trigram_measures = nltk.collocations.TrigramAssocMeasures()
+        # finder = TrigramCollocationFinder.from_words(str_conv)
+        # # only bigrams that appear 3+ times
+        # finder.apply_freq_filter(FILTER_NO)
+        # # return the 10 n-grams with the highest PMI
+        # res3 = finder.nbest(trigram_measures.pmi, 5)
+        # ngrams = []
+        # for item in res3:
+        #     tmp = ''
+        #     for wrd in item:
+        #         tmp = tmp + ' ' + wrd
+        #     ngrams.append(tmp)
+        # for item in res2:
+        #     if not any([set(item) < set(res3[o]) for o in range(0,len(res3))]):
+        #         tmp = ''
+        #         for wrd in item:
+        #             tmp = tmp + ' ' + wrd
+        #         ngrams.append(tmp.strip())
+        # ngramsUsr.append(ngrams)
+        # print(users[u] + "'s favourite expressions are: " + ' | '.join([k for k in ngramsUsr[u]]) + ';')
 
 
 # Time analysis over months
