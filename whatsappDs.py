@@ -236,6 +236,38 @@ for u in range(0, len(users)):
         tmp.append(ConvDates.count(d.strftime('%d/%m/%Y')))
     noMsgPerDay.append(tmp)
 
+# which months are included
+import math
+no_months=abs((d1.year - d2.year)*12 + d1.month - d2.month)
+MONTHS=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+years, months, months_short = [], [], []
+for k in range(d1.month,d1.month+no_months):
+    months.append(MONTHS[k % 12 - 1])
+    months_short.append(MONTHS[k%12 - 1][0])
+    years.append(d1.year + math.floor((k+d1.month-1)/12))
+# count messages as function of months
+
+current_month = d1.month
+tmp, ConvBodyByMonth = [], []
+for k in range(0,len(ConvDates)):
+    if ConvDatesLong[k].month==current_month:
+        tmp.append(ConvBody[k])
+    else:
+        print('month: '+str(ConvDatesLong[k-1].month))
+        ConvBodyByMonth.append(tmp)
+        current_month = ConvDatesLong[k].month
+        tmp = [ConvBody[k]]
+        print('next one is '+str(current_month))
+
+current_month = d1.month
+tmp, ConvBodyByMonth = [], []
+for k in range(0, no_months):
+    m = (k+d1.month-1)%12
+    print('k'+str(k)+'; m'+str(m)+'; '+MONTHS[m])
+    tmp = [ConvBody[o] for o in range(0,len(ConvBody)) if ConvDatesLong[o].month==m+1 and ConvDatesLong[o].year==years[m]]
+    ConvBodyByMonth.append(tmp)
+
+
 # WHAT DAYS OF THE WEEK DO WE MESSAGE LESS or MORE?
 if 6 in do_stages:
     # subplot(1) LESS
@@ -352,8 +384,6 @@ if 9 in do_stages: # depend on stage 3
         res4, res3 = Counter(buffer_words4).most_common(10), Counter(buffer_words3).most_common(10)
         ngramsUsr.append([wrd[0] for wrd in res3])
         print(users[u] + "'s favourite expressions are: " + ' | '.join([k for k in ngramsUsr[u]]) + ';')
-
-
 
         # Ngram analysis, but not sure about the results I get...
         # print('\nN=2 grams')
