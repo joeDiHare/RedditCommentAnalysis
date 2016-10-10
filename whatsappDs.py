@@ -248,24 +248,12 @@ for k in range(d1.month,d1.month+no_months):
 # count messages as function of months
 
 current_month = d1.month
-tmp, ConvBodyByMonth = [], []
-for k in range(0,len(ConvDates)):
-    if ConvDatesLong[k].month==current_month:
-        tmp.append(ConvBody[k])
-    else:
-        print('month: '+str(ConvDatesLong[k-1].month))
-        ConvBodyByMonth.append(tmp)
-        current_month = ConvDatesLong[k].month
-        tmp = [ConvBody[k]]
-        print('next one is '+str(current_month))
-
-current_month = d1.month
-tmp, ConvBodyByMonth = [], []
+tmp, ConvBodyByMonth, CounterByMonth = [], [], []
 for k in range(0, no_months):
     m = (k+d1.month-1)%12
-    print('k'+str(k)+'; m'+str(m)+'; '+MONTHS[m])
     tmp = [ConvBody[o] for o in range(0,len(ConvBody)) if ConvDatesLong[o].month==m+1 and ConvDatesLong[o].year==years[m]]
     ConvBodyByMonth.append(tmp)
+    CounterByMonth.append(len(tmp))
 
 
 # WHAT DAYS OF THE WEEK DO WE MESSAGE LESS or MORE?
