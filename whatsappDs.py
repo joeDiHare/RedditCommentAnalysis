@@ -184,7 +184,7 @@ if 3 in do_stages: #  dep on stage 1 and 2
         text_user = ' '.join(bodyUsr[u]).lower()
         wc = WordCloud(max_font_size=40, relative_scaling=.5, background_color="white",
                        max_words=50, stopwords=set(stopwords), mask=circle_mask).generate(text_user)#mask=alice_mask,
-        fig3 = plt.figure(figsize=(6,6))
+        fig3 = plt.figure(figsize=(5,5))
         plt.imshow(wc)
         plt.axis("off")
         fig3.savefig(users[u] + '_wordle.png')
@@ -279,10 +279,10 @@ if 5 in do_stages:
     ax.set_xlim(0, len(months))
     ax.set_ylim(0, max(ydata) + 5)
     # add more ticks
-    ax.set_xticks(range(0,len(months),30))
+    ax.set_xticks(xdata, months_short)
     # remove tick marks
-    ax.xaxis.set_tick_params(size=0)
-    ax.yaxis.set_tick_params(size=0)
+    ax.xaxis.set_tick_params(size=0.2)
+    ax.yaxis.set_tick_params(size=0.2)
     # change the color of the top and right spines to opaque gray
     ax.spines['right'].set_color((1,1,1))
     ax.spines['top'].set_color((1,1,1))
