@@ -208,14 +208,11 @@ for u in range(0,len(users)):
                 tmp_counter = tmp_counter + 1
                 StretchedWords.append(check_string)
                 break
-    StretchedWordsUsr.append(Counter(StretchedWords).most_common(5))
+    StretchedWordsUsr.append(', '.join(item[0] for item in Counter(StretchedWords).most_common(5)))
     CountStretchedWrds.append(tmp_counter)
     CountStretchedWrdsRatio.append(round(tmp_counter/len(str_conv),2))
     print(users[u]+" stretched words "+str(CountStretchedWrdsRatio[u]) +
-          "% of the times, and the most frequent words were: " + ', '.join(item[0] for item in StretchedWordsUsr[u]))
-
-
-
+          "% of the times, and the most frequent words were: " + StretchedWords[u])
 
 # HOW MANY JINX?
 if 4 in do_stages:
@@ -421,6 +418,8 @@ if 8 in do_stages:
     plt.close()
 
 # most common 3-word sentences
+TARGET = ['good night', 'happy birthday', 'happy anniversary']
+good_night, happy_bday, happy_anniv = [], [], []
 if 9 in do_stages: # depend on stage 3
     ngramsUsr = []
     for u in range(0,len(users)):
@@ -434,16 +433,21 @@ if 9 in do_stages: # depend on stage 3
             buffer_words3.append(str_conv[kk - 2] + ' ' + str_conv[kk - 1] + ' ' + str_conv[kk])
             buffer_words4.append(str_conv[kk - 3] + ' ' + str_conv[kk - 2] + ' ' + str_conv[kk - 1] + ' ' + str_conv[kk])
 
+        good_night.append(len([buffer_words2[o] for o in range(0, len(buffer_words2)) if buffer_words2[o] == TARGET[0]]))
+        happy_bday.append(len([buffer_words2[o] for o in range(0, len(buffer_words2)) if buffer_words2[o] == TARGET[1]]))
+        happy_anniv.append(len([buffer_words2[o] for o in range(0, len(buffer_words2)) if buffer_words2[o] == TARGET[2]]))
+
         res2 = Counter(buffer_words2).most_common(10)
         res3 = Counter(buffer_words3).most_common(10)
         res4 = Counter(buffer_words4).most_common(10)
 
-        # >> > len([buffer_words2[o] for o in range(0, len(buffer_words2)) if buffer_words2[o] == 'good night'])
-
         ngramsUsr.append([wrd[0] for wrd in res3])
         print(users[u] + "'s favourite expressions are: " + ' | '.join([k for k in ngramsUsr[u]]) + ';')
 
-        # FILTER_NO = 3
+
+
+
+            # FILTER_NO = 3
         # Ngram analysis, but not sure about the results I get...
         # print('\nN=2 grams')
         # bigram_measures = nltk.collocations.BigramAssocMeasures()
@@ -487,7 +491,9 @@ output_from_parsed_template = template.render(no_users=len(users), do_stages=do_
                                               message_counts=message_counts,mediaSender_counts=mediaSender_counts,
                                               jinxNo=jinxNo,
                                               noLove=noLove,noIloveU=noIloveU,noHateU=noHateU,
-                                              ngramsUsr=ngramsUsr)
+                                              ngramsUsr=ngramsUsr,
+                                              CountStretchedWrdsRatio=CountStretchedWrdsRatio,StretchedWordsUsr=StretchedWordsUsr,
+                                              happy_bday=happy_bday,happy_anniv=happy_anniv,good_night=good_night)
 # to save the results
 with open("OutputAnalysis.html", "w") as fh:
     fh.write(output_from_parsed_template)
