@@ -14,6 +14,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from wordcloud import WordCloud, STOPWORDS
 from PIL import Image
 from jinja2 import Template, Environment, FileSystemLoader
+import math
 import nltk
 from nltk.collocations import *
 import pdfkit
@@ -155,7 +156,7 @@ if 2 in do_stages:
     plt.close()
 
     for u in users:
-        print(u+' sent ' +str(message_counts[u])+' messages and '+str(mediaSender_counts[u])+' images/videos.')
+        print(u+' sent '+str(message_counts[u])+' messages and '+str(mediaSender_counts[u])+' images/videos.')
 
 # MOST COMMON 20 WORDS PER USER
 circle_mask = np.array(Image.open("circle-mask.png"))
@@ -182,7 +183,7 @@ if 3 in do_stages: #  dep on stage 1 and 2
         #Wordles
         text_user = ' '.join(bodyUsr[u]).lower()
         wc = WordCloud(max_font_size=40, relative_scaling=.5, background_color="white",
-                       max_words=50, stopwords=stopwords, mask=circle_mask).generate(text_user)#mask=alice_mask,
+                       max_words=50, stopwords=set(stopwords), mask=circle_mask).generate(text_user)#mask=alice_mask,
         fig3 = plt.figure(figsize=(6,6))
         plt.imshow(wc)
         plt.axis("off")
@@ -237,7 +238,6 @@ for u in range(0, len(users)):
     noMsgPerDay.append(tmp)
 
 # which months are included
-import math
 no_months=abs((d1.year - d2.year)*12 + d1.month - d2.month)
 MONTHS=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 years, months, months_short = [], [], []
@@ -245,15 +245,60 @@ for k in range(d1.month,d1.month+no_months):
     months.append(MONTHS[k % 12 - 1])
     months_short.append(MONTHS[k%12 - 1][0])
     years.append(d1.year + math.floor((k+d1.month-1)/12))
-# count messages as function of months
 
+# count messages as function of months
 current_month = d1.month
-tmp, ConvBodyByMonth, CounterByMonth = [], [], []
-for k in range(0, no_months):
-    m = (k+d1.month-1)%12
-    tmp = [ConvBody[o] for o in range(0,len(ConvBody)) if ConvDatesLong[o].month==m+1 and ConvDatesLong[o].year==years[m]]
-    ConvBodyByMonth.append(tmp)
-    CounterByMonth.append(len(tmp))
+tmp, Tmp1, Tmp2, ConvSenderByMonth, CounterSenderByMonth = [], [], [], [], []
+for user in users:
+    Tmp1, Tmp2 = [], []
+    for k in range(0, no_months):
+        m = (k+d1.month-1)%12
+        tmp = [ConvBody[o] for o in range(0,len(ConvBody))
+               if ConvDatesLong[o].month==m+1 and ConvDatesLong[o].year==years[m] and ConvSender[o]==user]
+        Tmp1.append(tmp)
+        Tmp2.append(len(tmp))
+    ConvSenderByMonth.append(Tmp1)
+    CounterSenderByMonth.append(Tmp2)
+## PLOT Message Distribution over period
+
+if 5 in do_stages:
+    cols = [[.5,.5,.8,.3],[.5,.6,.1,.3],'b','y','r','g']
+    fig3b = plt.figure(figsize=(8, 5))
+    ax = plt.subplot(111)
+    ax.spines["top"].set_visible(False);ax.spines["right"].set_visible(False)
+    ax.get_xaxis().tick_bottom();ax.get_yaxis().tick_left()
+    width = 0.35
+    for u in range(0,len(users)):
+        xdata = np.arange(len(months))+u*width
+        ydata = CounterSenderByMonth[u]
+        ax.bar(xdata,ydata, width, color=cols[u])
+    ax.set_xlabel('months', fontsize=16)
+    ax.set_ylabel('Number of conversations', fontsize=16)
+    ax.set_title('Message Distribution per month', fontsize=18)
+    # set the limits
+    ax.set_xlim(0, len(months))
+    ax.set_ylim(0, max(ydata) + 5)
+    # add more ticks
+    ax.set_xticks(range(0,len(months),30))
+    # remove tick marks
+    ax.xaxis.set_tick_params(size=0)
+    ax.yaxis.set_tick_params(size=0)
+    # change the color of the top and right spines to opaque gray
+    ax.spines['right'].set_color((1,1,1))
+    ax.spines['top'].set_color((1,1,1))
+    # tweak the axis labels
+    xlab = ax.xaxis.get_label()
+    ylab = ax.yaxis.get_label()
+    xlab.set_style('italic')
+    xlab.set_size(10)
+    ylab.set_style('italic')
+    ylab.set_size(10)
+    # tweak the title
+    ttl = ax.title
+    ttl.set_weight('bold')
+    fig3b.savefig('sender_per_month.png')
+    OutputPdf.savefig(fig3b)
+    plt.close()
 
 
 # WHAT DAYS OF THE WEEK DO WE MESSAGE LESS or MORE?
@@ -355,6 +400,7 @@ if 8 in do_stages:
     OutputPdf.savefig(fig6)
     plt.close()
 
+# most common 3-word sentences
 if 9 in do_stages: # depend on stage 3
     FILTER_NO = 3
     ngramsUsr = []
@@ -415,7 +461,8 @@ output_from_parsed_template = template.render(no_users=len(users), do_stages=do_
                                               UserRTmedian=UserRTmedian, FM_users=FM_users,
                                               message_counts=message_counts,mediaSender_counts=mediaSender_counts,
                                               jinxNo=jinxNo,
-                                              noLove=noLove,noIloveU=noIloveU,noHateU=noHateU)
+                                              noLove=noLove,noIloveU=noIloveU,noHateU=noHateU,
+                                              ngramsUsr=ngramsUsr)
 # to save the results
 with open("OutputAnalysis.html", "w") as fh:
     fh.write(output_from_parsed_template)
