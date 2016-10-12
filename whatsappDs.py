@@ -6,6 +6,7 @@ from collections import Counter
 import difflib
 from datetime import date, timedelta
 import matplotlib.pyplot as plt
+import matplotlib
 import string
 from itertools import groupby
 from collections import OrderedDict
@@ -239,12 +240,14 @@ for u in range(0, len(users)):
 
 # which months are included
 no_months=abs((d1.year - d2.year)*12 + d1.month - d2.month)
-MONTHS=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
-years, months, months_short = [], [], []
+# MONTHS=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+years, months, months_short, month_legend = [], [], [], []
 for k in range(d1.month,d1.month+no_months):
-    months.append(MONTHS[k % 12 - 1])
+    months.append(MONTHS[k%12 - 1])
     months_short.append(MONTHS[k%12 - 1][0])
     years.append(d1.year + math.floor((k+d1.month-1)/12))
+    month_legend.append(months_short[-1] if k%12!=1 else months[-1]+str(years[-1])[2:4])
 
 # count messages as function of months
 current_month = d1.month
@@ -272,30 +275,22 @@ if 5 in do_stages:
         xdata = np.arange(len(months))+u*width
         ydata = CounterSenderByMonth[u]
         ax.bar(xdata,ydata, width, color=cols[u])
+    plt.legend(users)
+    plt.xticks(xdata, month_legend, rotation='horizontal')
     ax.set_xlabel('months', fontsize=16)
     ax.set_ylabel('Number of conversations', fontsize=16)
     ax.set_title('Message Distribution per month', fontsize=18)
-    # set the limits
-    ax.set_xlim(0, len(months))
-    ax.set_ylim(0, max(ydata) + 5)
-    # add more ticks
-    ax.set_xticks(xdata, months_short)
-    # remove tick marks
     ax.xaxis.set_tick_params(size=0.2)
     ax.yaxis.set_tick_params(size=0.2)
     # change the color of the top and right spines to opaque gray
     ax.spines['right'].set_color((1,1,1))
     ax.spines['top'].set_color((1,1,1))
     # tweak the axis labels
-    xlab = ax.xaxis.get_label()
-    ylab = ax.yaxis.get_label()
-    xlab.set_style('italic')
-    xlab.set_size(10)
-    ylab.set_style('italic')
-    ylab.set_size(10)
+    max_mocon = max(max(CounterSenderByMonth)) + 5
+    ax.set_xlim(0-.1, no_months+.1); xlab = ax.xaxis.get_label(); xlab.set_style('italic'); xlab.set_size(10)
+    ax.set_ylim(0-.1, max_mocon+.1); ylab = ax.yaxis.get_label(); ylab.set_style('italic'); ylab.set_size(10)
     # tweak the title
-    ttl = ax.title
-    ttl.set_weight('bold')
+    ttl = ax.title;  ttl.set_weight('bold')
     fig3b.savefig('sender_per_month.png')
     OutputPdf.savefig(fig3b)
     plt.close()
