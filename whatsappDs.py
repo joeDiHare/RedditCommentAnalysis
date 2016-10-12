@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import string
 from itertools import groupby
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from wordcloud import WordCloud, STOPWORDS
@@ -191,6 +191,28 @@ if 3 in do_stages: #  dep on stage 1 and 2
         fig3.savefig(users[u] + '_wordle.png')
         OutputPdf.savefig(fig3)
         plt.close()
+# COUNT STRETCHED WORDS
+CountStretchedWrds, StretchedWordsUsr, CountStretchedWrdsRatio = [],[],[]
+for u in range(0,len(users)):
+    text = ' '.join(bodyUsr[u]).translate(str.maketrans('().;!?', '      ')).lower()
+    text = re.sub(r'\w+:\/{2}[\d\w-]+(\.[\d\w-]+)*(?:(?:\/[^\s/]*))*', '', text)
+    str_conv = list(filter(None, text.split(' ')))  # remove empty strings
+    tmp_counter = 0
+    StretchedWords = []
+    for check_string in str_conv:
+        tmp_counter_word = 0
+        for c in range(1,len(check_string)):
+            tmp_counter_word = tmp_counter_word+1 if check_string[c]==check_string[c-1] else 0
+            if tmp_counter_word > 2:
+                tmp_counter = tmp_counter + 1
+                StretchedWords.append(check_string)
+                break
+    StretchedWordsUsr.append(StretchedWords)
+    CountStretchedWrds.append(tmp_counter)
+    CountStretchedWrdsRatio.append(tmp_counter/len(str_conv))
+
+
+
 
 # HOW MANY JINX?
 if 4 in do_stages:
@@ -266,7 +288,7 @@ for user in users:
 
 if 5 in do_stages:
     cols = [[.5,.5,.8,.3],[.5,.6,.1,.3],'b','y','r','g']
-    fig3b = plt.figure(figsize=(8, 5))
+    fig3b = plt.figure(figsize=(10, 5))
     ax = plt.subplot(111)
     ax.spines["top"].set_visible(False);ax.spines["right"].set_visible(False)
     ax.get_xaxis().tick_bottom();ax.get_yaxis().tick_left()
@@ -277,7 +299,7 @@ if 5 in do_stages:
         ax.bar(xdata,ydata, width, color=cols[u])
     plt.legend(users)
     plt.xticks(xdata, month_legend, rotation='horizontal')
-    ax.set_xlabel('months', fontsize=16)
+    # ax.set_xlabel('months', fontsize=16)
     ax.set_ylabel('Number of conversations', fontsize=16)
     ax.set_title('Message Distribution per month', fontsize=18)
     ax.xaxis.set_tick_params(size=0.2)
@@ -287,8 +309,8 @@ if 5 in do_stages:
     ax.spines['top'].set_color((1,1,1))
     # tweak the axis labels
     max_mocon = max(max(CounterSenderByMonth)) + 5
-    ax.set_xlim(0-.1, no_months+.1); xlab = ax.xaxis.get_label(); xlab.set_style('italic'); xlab.set_size(10)
-    ax.set_ylim(0-.1, max_mocon+.1); ylab = ax.yaxis.get_label(); ylab.set_style('italic'); ylab.set_size(10)
+    ax.set_xlim(0-.1, no_months+.1); xlab = ax.xaxis.get_label(); xlab.set_style('italic')
+    ax.set_ylim(0-.1, max_mocon+.1); ylab = ax.yaxis.get_label(); ylab.set_style('italic')
     # tweak the title
     ttl = ax.title;  ttl.set_weight('bold')
     fig3b.savefig('sender_per_month.png')
