@@ -191,6 +191,7 @@ if 3 in do_stages: #  dep on stage 1 and 2
         fig3.savefig(users[u] + '_wordle.png')
         OutputPdf.savefig(fig3)
         plt.close()
+
 # COUNT STRETCHED WORDS
 CountStretchedWrds, StretchedWordsUsr, CountStretchedWrdsRatio = [],[],[]
 for u in range(0,len(users)):
@@ -207,9 +208,11 @@ for u in range(0,len(users)):
                 tmp_counter = tmp_counter + 1
                 StretchedWords.append(check_string)
                 break
-    StretchedWordsUsr.append(StretchedWords)
+    StretchedWordsUsr.append(Counter(StretchedWords).most_common(5))
     CountStretchedWrds.append(tmp_counter)
-    CountStretchedWrdsRatio.append(tmp_counter/len(str_conv))
+    CountStretchedWrdsRatio.append(round(tmp_counter/len(str_conv),2))
+    print(users[u]+" stretched words "+str(CountStretchedWrdsRatio[u]) +
+          "% of the times, and the most frequent words were: " + ', '.join(item[0] for item in StretchedWordsUsr[u]))
 
 
 
