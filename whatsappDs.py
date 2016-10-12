@@ -402,23 +402,28 @@ if 8 in do_stages:
 
 # most common 3-word sentences
 if 9 in do_stages: # depend on stage 3
-    FILTER_NO = 3
     ngramsUsr = []
     for u in range(0,len(users)):
         text = ' '.join(bodyUsr[u]).translate(str.maketrans('().;!?', '      ')).lower()
         text = re.sub(r'\w+:\/{2}[\d\w-]+(\.[\d\w-]+)*(?:(?:\/[^\s/]*))*', '', text)
         str_conv = list(filter(None, text.split(' '))) # remove empty strings
 
-        buffer_words4, buffer_words3 = [], []
+        buffer_words2, buffer_words3, buffer_words4 = [], [], []
         for kk in range(4,len(str_conv)):
-            # buffer_words2.append(str_conv[kk-1] + ' ' + str_conv[kk])
+            buffer_words2.append(str_conv[kk-1] + ' ' + str_conv[kk])
             buffer_words3.append(str_conv[kk - 2] + ' ' + str_conv[kk - 1] + ' ' + str_conv[kk])
             buffer_words4.append(str_conv[kk - 3] + ' ' + str_conv[kk - 2] + ' ' + str_conv[kk - 1] + ' ' + str_conv[kk])
 
-        res4, res3 = Counter(buffer_words4).most_common(10), Counter(buffer_words3).most_common(10)
+        res2 = Counter(buffer_words2).most_common(10)
+        res3 = Counter(buffer_words3).most_common(10)
+        res4 = Counter(buffer_words4).most_common(10)
+
+        # >> > len([buffer_words2[o] for o in range(0, len(buffer_words2)) if buffer_words2[o] == 'good night'])
+
         ngramsUsr.append([wrd[0] for wrd in res3])
         print(users[u] + "'s favourite expressions are: " + ' | '.join([k for k in ngramsUsr[u]]) + ';')
 
+        # FILTER_NO = 3
         # Ngram analysis, but not sure about the results I get...
         # print('\nN=2 grams')
         # bigram_measures = nltk.collocations.BigramAssocMeasures()
@@ -476,5 +481,5 @@ with open("OutputAnalysis.html", "w") as fh:
 # Module to: Find anniversaries by frequencies of "happy birthday"
 # Module to: Swear words
 # Module to: Implement detection block for US/EU pattern
-# Module to: Add more stopwords
-# Module to: Convert html to pdf
+# Module to: Add more stopwords to preferred sentences
+# Module to: Copy html to email and send
