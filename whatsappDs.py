@@ -19,6 +19,8 @@ import math
 import nltk
 from nltk.collocations import *
 import pdfkit
+# from pylab import pie
+
 
 # script to read-in list of words
 # filename = "/Users/joeDiHare/chat.txt"
@@ -37,7 +39,7 @@ if list(filter(None, row1[1].split(' ')))[0].count(':')==2: # EU format
 else:                                                       # US format
     PartChar = ' '
     MsgErr1 = ['Messages you send to this chat and calls are now secured with end-to-end encryption.', 'Missed Call']
-    MsgErr2 = ['<‎video omitted>', '<image omitted>', '<audio omitted>']
+    MsgErr2 = ['<video omitted>', '<image omitted>', '<audio omitted>']
 
 print("Reading chat conversation & first data validation... ", end="")
 results, mediaSender, mediaCaption = [], [], []
@@ -49,7 +51,7 @@ with open(filename, newline='',encoding='UTF8') as inputfile:
 
         R.append(row)
         if row!=[]: #ignore empty lines
-            if re.search(r'(^\d{1,2}/\d{2}/\d{2,4}$)', row[0]) is None: # if not a new sender, attach to previous
+            if re.search(r'(^\d{1,2}/\d{1,2}/\d{2,4}$)', row[0]) is None: # if not a new sender, attach to previous
                 # prevent links that have dates in it to be caught
                 results[-1][-1] = results[-1][-1] + ' ' + row[0]
             elif all([row[1].partition(PartChar)[-1].strip()!= MsgErr1[p] for p in range(0,len(MsgErr1))]): # -rm error messages 1
@@ -77,7 +79,7 @@ for n in results:
 print("Create full message lists... ", end="")
 bodyraw, dates, body, datesLong, message, tm, sender = [],[],[],[],[],[],[]
 for item in results:
-    match_date = re.search(r'(\d{1,2}/\d{2}/\d{2,4})', ' '.join(item))
+    match_date = re.search(r'(\d{1,2}/\d{1,2}/\d{2,4})', ' '.join(item))
     match_time = re.search(r'(\d+:\d+)', item[1])
     datesLong.append(datetime.datetime.strptime(match_date.group(1) + ' ' + match_time.group(1), format_time))
     dates.append(item[0])
@@ -166,12 +168,14 @@ for u in range(0,len(users)):
 # WHO MESSAGED THE MOST?
 if 1 in do_stages:
     message_counts = Counter(ConvSender)
+    MsgCountUsr = []
+    for user in users:
+        MsgCountUsr.append(message_counts[user])
     fig2a = plt.figure(0, figsize=(6,6))
     ax = plt.subplot(111)
-    df = pandas.DataFrame.from_dict(message_counts, orient='index')
-    df.plot.pie(subplots=True, ax=ax, rot=90)
-    plt.title("Who Messaged the Most?")
-    plt.xlabel("number of messages")
+    plt.pie(MsgCountUsr, labels=users, autopct='%1.1f%%', startangle=90)#, shadow=True
+    # plt.title("Who Messaged the Most?")
+    # plt.xlabel("Number of messages")
     ax.legend().set_visible(False)
     fig2a.savefig('WhoMessagedTheMost.png')
     OutputPdf.savefig(fig2a)
@@ -191,8 +195,8 @@ if 2 in do_stages:
     OutputPdf.savefig(fig2b)
     plt.close()
 
-    for u in users:
-        print(u+' sent '+str(message_counts[u])+' messages and '+str(mediaSender_counts[u])+' images/videos.')
+    for user in users:
+        print(user+' sent '+str(message_counts[user])+' messages and '+str(mediaSender_counts[user])+' images/videos.')
 
 # MOST COMMON 20 WORDS PER USER
 circle_mask = np.array(Image.open("circle-mask.png"))
@@ -532,6 +536,9 @@ output_from_parsed_template = template.render(no_users=len(users), do_stages=do_
 # to save the results
 with open("OutputAnalysis.html", "w") as fh:
     fh.write(output_from_parsed_template)
+
+import os
+os.system("open OutputAnalysis.html")
 #
 # import pdfkit
 # with open('OutputAnalysis.html') as f:
