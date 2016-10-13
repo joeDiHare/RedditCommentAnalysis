@@ -487,10 +487,7 @@ if 9 in do_stages: # depend on stage 3
         ngramsUsr.append([wrd[0] for wrd in res3])
         print(users[u] + "'s favourite expressions are: " + ' | '.join([k for k in ngramsUsr[u]]) + ';')
 
-
-
-
-            # FILTER_NO = 3
+        # FILTER_NO = 3
         # Ngram analysis, but not sure about the results I get...
         # print('\nN=2 grams')
         # bigram_measures = nltk.collocations.BigramAssocMeasures()
