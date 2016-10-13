@@ -184,19 +184,23 @@ if 1 in do_stages:
 # WHO SENT MORE MEDIA?
 if 2 in do_stages:
     mediaSender_counts = Counter(mediaSender)
+    MediaCountUsr=[]
+    for user in users:
+        MediaCountUsr.append(mediaSender_counts[user])
     fig2b = plt.figure(figsize=(6,4))
     ax = plt.subplot(111)
-    df2 = pandas.DataFrame.from_dict(mediaSender_counts, orient='index')
-    df2.plot(kind='bar', ax=ax, rot=0, color=['g','k'])
-    plt.title("Who sent more media messages?")
-    plt.xlabel("number of messages")
-    ax.legend().set_visible(False)
+    plt.bar(range(0,len(users)),MediaCountUsr, width=.5, color=['g','k'])
+    ax.set_xlim(0-.5, len(users)-.5)
+    ax.set_xticks(range(0,len(users)))
+    ax.set_xticklabels(users)
+    # plt.title("Who sent more media messages?")
+    plt.xlabel("Number of messages")
     fig2b.savefig('WhoSentMoreMedia.png')
     OutputPdf.savefig(fig2b)
     plt.close()
 
-    for user in users:
-        print(user+' sent '+str(message_counts[user])+' messages and '+str(mediaSender_counts[user])+' images/videos.')
+    for u in range(0,len(users)):
+        print(user+' sent '+str(MsgCountUsr[u])+' messages and '+str(MediaCountUsr[u])+' images/videos.')
 
 # MOST COMMON 20 WORDS PER USER
 circle_mask = np.array(Image.open("circle-mask.png"))
@@ -340,7 +344,7 @@ if 5 in do_stages:
     plt.xticks(xdata, month_legend, rotation='horizontal')
     # ax.set_xlabel('months', fontsize=16)
     ax.set_ylabel('Number of conversations', fontsize=16)
-    ax.set_title('Message Distribution per month', fontsize=18)
+    # ax.set_title('Message Distribution per month', fontsize=18)
     ax.xaxis.set_tick_params(size=0.2)
     ax.yaxis.set_tick_params(size=0.2)
     # change the color of the top and right spines to opaque gray
@@ -527,7 +531,7 @@ env = Environment(loader=FileSystemLoader('templates'))
 template = env.get_template('index.html')
 output_from_parsed_template = template.render(no_users=len(users), do_stages=do_stages, users=users,
                                               UserRTmedian=UserRTmedian, FM_users=FM_users,
-                                              message_counts=message_counts,mediaSender_counts=mediaSender_counts,
+                                              MsgCountUsr=MsgCountUsr,MediaCountUsr=MediaCountUsr,
                                               jinxNo=jinxNo,
                                               noLove=noLove,noIloveU=noIloveU,noHateU=noHateU,
                                               ngramsUsr=ngramsUsr,
