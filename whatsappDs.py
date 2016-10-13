@@ -21,36 +21,71 @@ from nltk.collocations import *
 import pdfkit
 
 # script to read-in list of words
-filename = "/Users/joeDiHare/chat.txt"
-MsgErr1 = 'Messages you send to this chat and calls are now secured with end-to-end encryption. Tap for more info.'
-MsgErr2 = '<Media omitted>'
+# filename = "/Users/joeDiHare/chat.txt"
+filename = "/Users/joeDiHare/chat_full.txt"
+# 11/10/14, 18:27:25: Nahnahnah Chill: How was your daaaaaay!?
+# 06/01/2015, 12:43 - stefano cosentino: Remember the jamper?
+
+# detect format from first row
+with open(filename, newline='',encoding='UTF8') as inputfile:
+    reader = csv.reader(inputfile)
+    row1 = next(reader)
+if list(filter(None, row1[1].split(' ')))[0].count(':')==2: # EU format
+    PartChar = ' - '
+    MsgErr1 = 'Messages you send to this chat and calls are now secured with end-to-end encryption. Tap for more info.'
+    MsgErr2 = '<Media omitted>'
+else:                                                       # US format
+    PartChar = ' '
+    MsgErr1 = ['Messages you send to this chat and calls are now secured with end-to-end encryption.', 'Missed Call']
+    MsgErr2 = ['<‎video omitted>', '<image omitted>', '<audio omitted>']
+
 print("Reading chat conversation & first data validation... ", end="")
 results, mediaSender, mediaCaption = [], [], []
+R=[]
 with open(filename, newline='',encoding='UTF8') as inputfile:
     for row in csv.reader(inputfile):
+        for elem in range(0,len(row)): # strip all unicode elements
+            row[elem] = row[elem].replace('\\','').encode('ascii', 'ignore').decode('unicode_escape').strip()
+
+        R.append(row)
         if row!=[]: #ignore empty lines
-            if re.search(r'(\d+/\d+/\d+)', row[0]) is None: #if not a new sender, attach to previous
+            if re.search(r'(^\d{1,2}/\d{2}/\d{2,4}$)', row[0]) is None: # if not a new sender, attach to previous
+                # prevent links that have dates in it to be caught
                 results[-1][-1] = results[-1][-1] + ' ' + row[0]
-            elif row[1].partition('-')[-1].partition(':')[0].strip()!= MsgErr1: #remove error messages
-                if row[1].partition(':')[-1].partition(':')[-1].strip()[:15]== MsgErr2: #count <Media omitted> and remove
-                    mediaSender.append(row[1].partition('-')[-1].partition(':')[0].strip())
+            elif all([row[1].partition(PartChar)[-1].strip()!= MsgErr1[p] for p in range(0,len(MsgErr1))]): # -rm error messages 1
+                if any([row[1].partition(PartChar)[-1].partition(':')[-1].strip()==MsgErr2[o]
+                        for o in range(0,len(MsgErr2))]):
+                    # count <Media omitted> and remove
+                    mediaSender.append(row[1].partition(PartChar)[-1].partition(':')[0].strip())
                     mediaCaption.append(row[1].partition(':')[-1].partition(':')[-1].strip())
                 else:
                     results.append(row)
 print('[done]')
 
+# check if EU or US time format and CONVERT to EU time format
+format_time = "%d/%m/%Y %H:%M"
+for n in results:
+    first = n[0].partition('/')[0]
+    secnd = n[0].partition('/')[2].partition('/')[0]
+    if int(secnd)>12 or len(first)<2:
+        # detected format_time = "%m/%d/%Y %H:%M"
+        # CONVERT DATE FORMAT
+        for nn in range(0,len(results)):
+            results[nn][0] = datetime.datetime.strptime(results[nn][0], '%m/%d/%y').strftime('%d/%m/%Y')
+        break
+
 print("Create full message lists... ", end="")
 bodyraw, dates, body, datesLong, message, tm, sender = [],[],[],[],[],[],[]
 for item in results:
-    match_date = re.search(r'(\d+/\d+/\d+)', ''.join(item))
+    match_date = re.search(r'(\d{1,2}/\d{2}/\d{2,4})', ' '.join(item))
     match_time = re.search(r'(\d+:\d+)', item[1])
-    datesLong.append(datetime.datetime.strptime(match_date.group(1) + ' ' + match_time.group(1), "%d/%m/%Y %H:%M"))
+    datesLong.append(datetime.datetime.strptime(match_date.group(1) + ' ' + match_time.group(1), format_time))
     dates.append(item[0])
     tm.append(match_time.group(1))
-    sender.append(item[1].partition('-')[-1].partition(':')[0].strip())
-    message.append(''.join(item))
+    sender.append(item[1].partition(PartChar)[-1].partition(':')[0].strip())
+    message.append(' '.join(item))
     bodyraw.append(item[1])
-    body.append(item[1].partition(':')[-1].partition(':')[-1].strip())
+    body.append(item[1].partition(PartChar)[-1].partition(':')[-1].strip())
 print('[done]')
 
 print("Create conversation lists... ", end="")
@@ -243,13 +278,13 @@ for n in ConvDates:
     Duniq.append(n) if Duniq[-1]!=n else ''
 Duniq.pop(0)
 
-#Dates for user
+# Dates for user (indexing)
 datesUser=[]
 for u in range(0,len(users)):
     tmp = [ConvDates[n] for n in range(0, len(ConvDates)) if ind[u][n]]
     datesUser.append(tmp)
 
-# a list containing all uniques days of the dates from
+# A list containing all uniques days of the dates from
 d1 = date(int(ConvDates[0][-4:10]),int(ConvDates[0][3:5]),int(ConvDates[0][0:2]))
 d2 = date(int(ConvDates[-1][-4:10]),int(ConvDates[-1][3:5]),int(ConvDates[-1][0:2]))
 dd = [d1 + timedelta(days=x) for x in range((d2-d1).days + 1)]
