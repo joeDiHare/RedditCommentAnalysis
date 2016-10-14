@@ -1,3 +1,4 @@
+import os
 import csv
 import re
 import datetime
@@ -6,7 +7,6 @@ from collections import Counter
 import difflib
 from datetime import date, timedelta
 import matplotlib.pyplot as plt
-import matplotlib
 import string
 from itertools import groupby
 from collections import OrderedDict, defaultdict
@@ -19,7 +19,6 @@ import math
 import nltk
 from nltk.collocations import *
 import pdfkit
-# from pylab import pie
 
 
 # script to read-in list of words
@@ -227,7 +226,7 @@ if 3 in do_stages: #  dep on stage 1 and 2
         #Wordles
         text_user = ' '.join(bodyUsr[u]).lower()
         wc = WordCloud(max_font_size=40, relative_scaling=.5, background_color="white",
-                       max_words=50, stopwords=set(stopwords), mask=circle_mask).generate(text_user)#mask=alice_mask,
+                       max_words=30, stopwords=set(stopwords), mask=circle_mask).generate(text_user)#mask=alice_mask,
         fig3 = plt.figure(figsize=(5,5))
         plt.imshow(wc)
         plt.axis("off")
@@ -462,6 +461,11 @@ if 8 in do_stages:
 
 # most common 3-word sentences
 TARGET = ['good night', 'happy birthday', 'happy anniversary']
+# script to read-in strop words
+filename = 'stopwords_3_words.txt'; stopwords3 = []
+with open(filename, newline='', encoding='UTF8') as inputfile:
+    for row in csv.reader(inputfile):
+        stopwords3.append(row[0].lower())
 good_night, happy_bday, happy_anniv = [], [], []
 if 9 in do_stages: # depend on stage 3
     ngramsUsr = []
@@ -480,12 +484,12 @@ if 9 in do_stages: # depend on stage 3
         happy_bday.append(len([buffer_words2[o] for o in range(0, len(buffer_words2)) if buffer_words2[o] == TARGET[1]]))
         happy_anniv.append(len([buffer_words2[o] for o in range(0, len(buffer_words2)) if buffer_words2[o] == TARGET[2]]))
 
-        res2 = Counter(buffer_words2).most_common(10)
-        res3 = Counter(buffer_words3).most_common(10)
-        res4 = Counter(buffer_words4).most_common(10)
+        res2 = Counter(buffer_words2).most_common(50)
+        res3 = Counter(buffer_words3).most_common(50)
+        res4 = Counter(buffer_words4).most_common(50)
 
-        ngramsUsr.append([wrd[0] for wrd in res3])
-        print(users[u] + "'s favourite expressions are: " + ' | '.join([k for k in ngramsUsr[u]]) + ';')
+        ngramsUsr.append([wrd[0] for wrd in res3 if wrd[0] not in stopwords3])
+        print(users[u] + "'s favourite expressions are: " + ' | '.join([ngramsUsr[u][k] for k in range(0,min(5,len(ngramsUsr[u])))]) + ';')
 
         # FILTER_NO = 3
         # Ngram analysis, but not sure about the results I get...
@@ -538,7 +542,6 @@ output_from_parsed_template = template.render(no_users=len(users), do_stages=do_
 with open("OutputAnalysis.html", "w") as fh:
     fh.write(output_from_parsed_template)
 
-import os
 os.system("open OutputAnalysis.html")
 #
 # import pdfkit
