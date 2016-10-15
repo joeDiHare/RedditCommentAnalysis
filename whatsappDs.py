@@ -554,4 +554,5 @@ os.system("open OutputAnalysis.html")
 # Module to: Swear words
 # Module to: Implement detection block for US/EU pattern
 # Module to: Add more stopwords to preferred sentences
+# Module to: Who has is the funniest? count 'haha'
 # Module to: Copy html to email and send
