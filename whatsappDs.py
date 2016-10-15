@@ -174,7 +174,7 @@ if 1 in do_stages:
     ax = plt.subplot(111)
     plt.pie(MsgCountUsr, labels=users, autopct='%1.1f%%', startangle=90)#, shadow=True
     # plt.title("Who Messaged the Most?")
-    # plt.xlabel("Number of messages")
+    # plt.ylabel("Number of messages")
     ax.legend().set_visible(False)
     fig2a.savefig('WhoMessagedTheMost.png')
     OutputPdf.savefig(fig2a)
@@ -189,11 +189,12 @@ if 2 in do_stages:
     fig2b = plt.figure(figsize=(6,4))
     ax = plt.subplot(111)
     plt.bar(range(0,len(users)),MediaCountUsr, width=.5, color=['g','k'])
-    ax.set_xlim(0-.5, len(users)-.5)
+    ax.set_xlim(0-.5, len(users))
     ax.set_xticks(range(0,len(users)))
     ax.set_xticklabels(users)
     # plt.title("Who sent more media messages?")
-    plt.xlabel("Number of messages")
+    # plt.xlabel("Number of media exchanged")
+    plt.ylabel("Number of media exchanged")
     fig2b.savefig('WhoSentMoreMedia.png')
     OutputPdf.savefig(fig2b)
     plt.close()
@@ -468,7 +469,7 @@ with open(filename, newline='', encoding='UTF8') as inputfile:
         stopwords3.append(row[0].lower())
 good_night, happy_bday, happy_anniv = [], [], []
 if 9 in do_stages: # depend on stage 3
-    ngramsUsr = []
+    ngramsUsr, lensGrams = [], []
     for u in range(0,len(users)):
         text = ' '.join(bodyUsr[u]).translate(str.maketrans('().;!?', '      ')).lower()
         text = re.sub(r'\w+:\/{2}[\d\w-]+(\.[\d\w-]+)*(?:(?:\/[^\s/]*))*', '', text)
@@ -489,7 +490,8 @@ if 9 in do_stages: # depend on stage 3
         res4 = Counter(buffer_words4).most_common(50)
 
         ngramsUsr.append([wrd[0] for wrd in res3 if wrd[0] not in stopwords3])
-        print(users[u] + "'s favourite expressions are: " + ' | '.join([ngramsUsr[u][k] for k in range(0,min(5,len(ngramsUsr[u])))]) + ';')
+        lensGrams.append(min(5,len(ngramsUsr[u])))
+        print(users[u] + "'s favourite expressions are: " + ' | '.join([ngramsUsr[u][k] for k in range(0,lensGrams[u])]) + ';')
 
         # FILTER_NO = 3
         # Ngram analysis, but not sure about the results I get...
@@ -535,7 +537,7 @@ output_from_parsed_template = template.render(no_users=len(users), do_stages=do_
                                               MsgCountUsr=MsgCountUsr,MediaCountUsr=MediaCountUsr,
                                               jinxNo=jinxNo,
                                               noLove=noLove,noIloveU=noIloveU,noHateU=noHateU,
-                                              ngramsUsr=ngramsUsr,
+                                              ngramsUsr=ngramsUsr, lensGrams=lensGrams,
                                               CountStretchedWrdsRatio=CountStretchedWrdsRatio,StretchedWordsUsr=StretchedWordsUsr,
                                               happy_bday=happy_bday,happy_anniv=happy_anniv,good_night=good_night)
 # to save the results
