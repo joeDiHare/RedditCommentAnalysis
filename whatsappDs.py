@@ -22,8 +22,8 @@ import pdfkit
 
 
 # script to read-in list of words
-# filename = "/Users/joeDiHare/chat.txt"
-filename = "/Users/joeDiHare/chat_full.txt"
+filename = "/Users/joeDiHare/chat.txt"
+# filename = "/Users/joeDiHare/chat_full.txt"
 # 11/10/14, 18:27:25: Nahnahnah Chill: How was your daaaaaay!?
 # 06/01/2015, 12:43 - stefano cosentino: Remember the jamper?
 
@@ -31,10 +31,10 @@ filename = "/Users/joeDiHare/chat_full.txt"
 with open(filename, newline='',encoding='UTF8') as inputfile:
     reader = csv.reader(inputfile)
     row1 = next(reader)
-if list(filter(None, row1[1].split(' ')))[0].count(':')==2: # EU format
+if list(filter(None, row1[1].split(' ')))[0].count(':')==1: # EU format
     PartChar = ' - '
-    MsgErr1 = 'Messages you send to this chat and calls are now secured with end-to-end encryption. Tap for more info.'
-    MsgErr2 = '<Media omitted>'
+    MsgErr1 = ['Messages you send to this chat and calls are now secured with end-to-end encryption. Tap for more info.']
+    MsgErr2 = ['<Media omitted>']
 else:                                                       # US format
     PartChar = ' '
     MsgErr1 = ['Messages you send to this chat and calls are now secured with end-to-end encryption.', 'Missed Call']
@@ -42,23 +42,23 @@ else:                                                       # US format
 
 print("Reading chat conversation & first data validation... ", end="")
 results, mediaSender, mediaCaption = [], [], []
-R=[]
+# R=[]
 with open(filename, newline='',encoding='UTF8') as inputfile:
     for row in csv.reader(inputfile):
         for elem in range(0,len(row)): # strip all unicode elements
             row[elem] = row[elem].replace('\\','').encode('ascii', 'ignore').decode('unicode_escape').strip()
 
-        R.append(row)
+        # R.append(row)
         if row!=[]: #ignore empty lines
             if re.search(r'(^\d{1,2}/\d{1,2}/\d{2,4}$)', row[0]) is None: # if not a new sender, attach to previous
                 # prevent links that have dates in it to be caught
                 results[-1][-1] = results[-1][-1] + ' ' + row[0]
-            elif all([row[1].partition(PartChar)[-1].strip()!= MsgErr1[p] for p in range(0,len(MsgErr1))]): # -rm error messages 1
-                if any([row[1].partition(PartChar)[-1].partition(':')[-1].strip()==MsgErr2[o]
-                        for o in range(0,len(MsgErr2))]):
+            elif all([row[1].partition(PartChar)[-1].strip()!=_msg_err for _msg_err in MsgErr1]): # -rm error messages 1
+                if any([row[1].partition(PartChar)[-1].partition(':')[-1].strip()==_msg_err
+                        for _msg_err in MsgErr2]):
                     # count <Media omitted> and remove
                     mediaSender.append(row[1].partition(PartChar)[-1].partition(':')[0].strip())
-                    mediaCaption.append(row[1].partition(':')[-1].partition(':')[-1].strip())
+                    # mediaCaption.append(row[1].partition(':')[-1].partition(':')[-1].strip()) not correct if more than one : in the body
                 else:
                     results.append(row)
 print('[done]')
