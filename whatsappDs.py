@@ -172,9 +172,14 @@ if 1 in do_stages:
         MsgCountUsr.append(message_counts[user])
     fig2a = plt.figure(0, figsize=(6,6))
     ax = plt.subplot(111)
-    plt.pie(MsgCountUsr, labels=users, autopct='%1.1f%%', startangle=90)#, shadow=True
+    _,ttext,attext = plt.pie(MsgCountUsr, labels=users, autopct='%1.0f%%', startangle=90)#, shadow=True
     # plt.title("Who Messaged the Most?")
     # plt.ylabel("Number of messages")
+    for _n in attext:
+        _n.set_color('white')
+        _n.set_size(40.0)
+    # for _n in ttext:
+    #     _n.set_size(40.0)
     ax.legend().set_visible(False)
     fig2a.savefig('WhoMessagedTheMost.png')
     OutputPdf.savefig(fig2a)
@@ -398,7 +403,8 @@ if 6 in do_stages:
     plt.close()
 
 # WHAT HOUR OF THE DAY WE MESSAGE MORE?
-hours=['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23']
+# hours=['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23']
+hours=['00','','02','','04','','06','','08','','10','','12','','14','','16','','18','','20','','22','']
 if 7 in do_stages:
     fig5b = plt.figure(figsize=(6, 6))
     ax2 = plt.subplot(111)
