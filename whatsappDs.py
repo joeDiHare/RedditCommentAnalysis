@@ -207,7 +207,7 @@ if 2 in do_stages:
     for u in range(0,len(users)):
         print(user+' sent '+str(MsgCountUsr[u])+' messages and '+str(MediaCountUsr[u])+' images/videos.')
 
-# MOST COMMON 20 WORDS PER USER
+# MOST COMMON N WORDS PER USER
 circle_mask = np.array(Image.open("circle-mask.png"))
 # stwords = set(STOPWORDS)
 # stwords.add("said")
@@ -232,7 +232,7 @@ if 3 in do_stages: #  dep on stage 1 and 2
         #Wordles
         text_user = ' '.join(bodyUsr[u]).lower()
         wc = WordCloud(max_font_size=40, relative_scaling=.5, background_color="white",
-                       max_words=30, stopwords=set(stopwords), mask=circle_mask).generate(text_user)#mask=alice_mask,
+                       max_words=50, stopwords=set(stopwords), mask=circle_mask).generate(text_user)#mask=alice_mask,
         fig3 = plt.figure(figsize=(5,5))
         plt.imshow(wc)
         plt.axis("off")
