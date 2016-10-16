@@ -124,7 +124,7 @@ print('[done]')
 
 print('\n\n~~~~~~~~~~~~~~~~~~~ DATA ANALYSIS ~~~~~~~~~~~~~~~~~~~~\n')
 do_stages = [1,2,3,4,5,6,7,8,9]#1,2,3,4,5,6,7,8,9]
-OutputPdf = PdfPages(filename='outputWA.pdf')
+# OutputPdf = PdfPages(filename='outputWA.pdf')
 users = list(set(sender))
 print('Conversations between '+str(len(users))+' users:' + str(users))
 
@@ -182,7 +182,7 @@ if 1 in do_stages:
     #     _n.set_size(40.0)
     ax.legend().set_visible(False)
     fig2a.savefig('WhoMessagedTheMost.png')
-    OutputPdf.savefig(fig2a)
+    # OutputPdf.savefig(fig2a)
     plt.close()
 
 # WHO SENT MORE MEDIA?
@@ -201,7 +201,7 @@ if 2 in do_stages:
     # plt.xlabel("Number of media exchanged")
     plt.ylabel("Number of media exchanged")
     fig2b.savefig('WhoSentMoreMedia.png')
-    OutputPdf.savefig(fig2b)
+    # OutputPdf.savefig(fig2b)
     plt.close()
 
     for u in range(0,len(users)):
@@ -237,7 +237,7 @@ if 3 in do_stages: #  dep on stage 1 and 2
         plt.imshow(wc)
         plt.axis("off")
         fig3.savefig(users[u] + '_wordle.png')
-        OutputPdf.savefig(fig3)
+        # OutputPdf.savefig(fig3)
         plt.close()
 
 # COUNT STRETCHED WORDS
@@ -362,7 +362,7 @@ if 5 in do_stages:
     # tweak the title
     ttl = ax.title;  ttl.set_weight('bold')
     fig3b.savefig('sender_per_month.png')
-    OutputPdf.savefig(fig3b)
+    # OutputPdf.savefig(fig3b)
     plt.close()
 
 
@@ -399,7 +399,7 @@ if 6 in do_stages:
         plt.xticks(range(len(noMsgPerWeekday[u])), noMsgPerWeekday[u].keys())
         plt.ylabel('Occurrence'); plt.title('Messaging during the week')
     fig4.savefig('weekdays.png')
-    OutputPdf.savefig(fig4)
+    # OutputPdf.savefig(fig4)
     plt.close()
 
 # WHAT HOUR OF THE DAY WE MESSAGE MORE?
@@ -420,7 +420,7 @@ if 7 in do_stages:
     plt.ylabel('Occurrence'); plt.xlabel('Hour of the day'); plt.title('Messaging during the day')
     plt.legend(users)
     fig5b.savefig('dayshour.png')
-    OutputPdf.savefig(fig5b)
+    # OutputPdf.savefig(fig5b)
     plt.close()
 
 ## PLOT Message Distribution over period
@@ -463,7 +463,7 @@ if 8 in do_stages:
     ttl = ax.title
     ttl.set_weight('bold')
     fig6.savefig('message_distribution.png')
-    OutputPdf.savefig(fig6)
+    # OutputPdf.savefig(fig6)
     plt.close()
 
 # most common 3-word sentences
@@ -529,10 +529,16 @@ if 9 in do_stages: # depend on stage 3
         # print(users[u] + "'s favourite expressions are: " + ' | '.join([k for k in ngramsUsr[u]]) + ';')
 
 
-# Time analysis over months
+# Laughter analysis
+LaughterUsr = []
+for u in range(0,len(users)):
+    all_words = ' '.join(bodyUsr[0]).split()
+    hah = [word for word in all_words if 'hah' in word.lower()]
+    LaughterUsr.append([len(hah), len(hah)/len(all_words), len(max(hah, key=len))])
 
 
-OutputPdf.close()
+
+# OutputPdf.close()
 
 
 # Render html file
