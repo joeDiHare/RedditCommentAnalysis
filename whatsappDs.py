@@ -116,7 +116,7 @@ ConvBody = [body[0]]; ConvSender = [sender[0]]; ConvDates = [dates[0]]; ConvDate
 ConvMessage = [message[0]]; ConvTime = [tm[0]]; ConvTimeEnd = [tm[0]]
 Conversations, LM = [],[]; RT= [['user', -1]]; flag_new_conv=False
 bodylast = '(' + sender[0] + ') ' + body[0]
-LONG_BREAK_CONV = 30 * 60 # time constant to consider a message as belonging to a new conversation
+LONG_BREAK_CONV = 60 * 60 # time constant to consider a message as belonging to a new conversation (set to 60 min)
 for n in range(1,len(tm)):
     if (datetime.datetime.strptime(tm[n], "%H:%M") - datetime.datetime.strptime(tm[n-1], "%H:%M")).seconds < LONG_BREAK_CONV \
     and sender[n]==sender[n-1]: # same sender, add to last message
