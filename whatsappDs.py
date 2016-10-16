@@ -352,8 +352,9 @@ years, months, months_short, month_legend = [], [], [], []
 for k in range(d1.month,d1.month+no_months):
     months.append(MONTHS[k%12 - 1])
     months_short.append(MONTHS[k%12 - 1][0])
-    years.append(d1.year + math.floor((k+d1.month-1)/12))
+    years.append(d1.year + math.floor(k/12.01))
     month_legend.append(months_short[-1] if k%12!=1 else months[-1]+str(years[-1])[2:4])
+    # print(str(months[-1])+' '+str(years[-1]))
 
 # count messages as function of months
 current_month = d1.month
@@ -370,6 +371,12 @@ for user in users:
     CounterSenderByMonth.append(Tmp2)
 ## PLOT Message Distribution over period
 
+[ConvBody[o] for o in range(0,len(ConvBody))
+               if ConvDatesLong[o].month==m+1 and ConvDatesLong[o].year==years[m] and ConvSender[o]==user]
+
+for o in range(0,len(ConvBody)):
+    if ConvDatesLong[o].month==m+1 and ConvDatesLong[o].year==years[m] and ConvSender[o]==user:
+        print(ConvBody[o])
 if 5 in do_stages:
     cols = [[.5,.5,.8,.3],[.5,.6,.1,.3],'b','y','r','g']
     fig3b = plt.figure(figsize=(10, 5))
