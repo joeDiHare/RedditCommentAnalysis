@@ -16,6 +16,7 @@ from wordcloud import WordCloud, STOPWORDS
 from PIL import Image
 from jinja2 import Template, Environment, FileSystemLoader
 import math
+from langdetect import detect_langs
 import nltk
 from nltk.collocations import *
 import pdfkit
@@ -53,7 +54,8 @@ if list(filter(None, row1[1].split(' ')))[0].count(':')==1: # EU format
     MsgErr2 = ['<Media omitted>']
 else:                                                       # US format
     PartChar = ' '
-    MsgErr1 = ['Messages you send to this chat and calls are now secured with end-to-end encryption.', 'Missed Call']
+    MsgErr1 = ['Messages you send to this chat and calls are now secured with end-to-end encryption.',
+               'Messages you send to this group are now secured with end-to-end encryption.','Missed Call']
     MsgErr2 = ['<video omitted>', '<image omitted>', '<audio omitted>']
 
 print("Reading chat conversation & first data validation... ", end="")
@@ -62,8 +64,7 @@ with open(filename, newline='',encoding='UTF8') as inputfile:
     # for row in csv.reader(inputfile):
     for row in inputfile:
         row = row.split(",",1)
-
-        # R.append(row)
+        R.append(row)
         for elem in range(0,len(row)): # strip all unicode elements
             row[elem] = row[elem].replace('\\','').encode('ascii', 'ignore').decode('unicode_escape').strip()
         if row!=[]: #ignore empty lines
@@ -105,6 +106,9 @@ for item in results:
     bodyraw.append(item[1])
     body.append(item[1].partition(PartChar)[-1].partition(':')[-1].strip())
 print('[done]')
+
+# Detect language
+Lang = detect_langs(' '.join(body))[0].lang
 
 print("Create conversation lists... ", end="")
 # if the previous message is within LONG_BREAK_CON seconds and it is from the same sender, combine them in the same conversation
@@ -364,19 +368,13 @@ for user in users:
     for k in range(0, no_months):
         m = (k+d1.month-1)%12
         tmp = [ConvBody[o] for o in range(0,len(ConvBody))
-               if ConvDatesLong[o].month==m+1 and ConvDatesLong[o].year==years[m] and ConvSender[o]==user]
+               if ConvDatesLong[o].month==m+1 and ConvDatesLong[o].year==years[k] and ConvSender[o]==user]
         Tmp1.append(tmp)
         Tmp2.append(len(tmp))
     ConvSenderByMonth.append(Tmp1)
     CounterSenderByMonth.append(Tmp2)
 ## PLOT Message Distribution over period
 
-[ConvBody[o] for o in range(0,len(ConvBody))
-               if ConvDatesLong[o].month==m+1 and ConvDatesLong[o].year==years[m] and ConvSender[o]==user]
-
-for o in range(0,len(ConvBody)):
-    if ConvDatesLong[o].month==m+1 and ConvDatesLong[o].year==years[m] and ConvSender[o]==user:
-        print(ConvBody[o])
 if 5 in do_stages:
     cols = [[.5,.5,.8,.3],[.5,.6,.1,.3],'b','y','r','g']
     fig3b = plt.figure(figsize=(10, 5))
