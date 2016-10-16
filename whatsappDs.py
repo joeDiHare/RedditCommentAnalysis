@@ -23,7 +23,7 @@ import pdfkit
 
 # script to read-in list of words
 filename = "/Users/joeDiHare/chat.txt"
-# filename = "/Users/joeDiHare/chat_full.txt"
+filename = "/Users/joeDiHare/chat_full.txt"
 # 11/10/14, 18:27:25: Nahnahnah Chill: How was your daaaaaay!?
 # 06/01/2015, 12:43 - stefano cosentino: Remember the jamper?
 
@@ -403,8 +403,8 @@ if 6 in do_stages:
     plt.close()
 
 # WHAT HOUR OF THE DAY WE MESSAGE MORE?
-# hours=['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23']
-hours=['00','','02','','04','','06','','08','','10','','12','','14','','16','','18','','20','','22','']
+hours=['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23']
+hours_labels=['00','','02','','04','','06','','08','','10','','12','','14','','16','','18','','20','','22','']
 if 7 in do_stages:
     fig5b = plt.figure(figsize=(6, 6))
     ax2 = plt.subplot(111)
@@ -416,7 +416,7 @@ if 7 in do_stages:
             tmp.append(sum([ConvTime[n][:2].count(t) for n in range(0,len(ConvTime)) if ind[u][n]]))
         noMsgPerHour.append(tmp)
         ax2.bar(u*width+np.arange(0,len(noMsgPerHour[u])), noMsgPerHour[u], color=cols[u], width=width)
-        plt.xticks(np.arange(0,len(noMsgPerHour[u])), hours)
+        plt.xticks(np.arange(0,len(noMsgPerHour[u])), hours_labels)
     plt.ylabel('Occurrence'); plt.xlabel('Hour of the day'); plt.title('Messaging during the day')
     plt.legend(users)
     fig5b.savefig('dayshour.png')
@@ -532,9 +532,11 @@ if 9 in do_stages: # depend on stage 3
 # Laughter analysis
 LaughterUsr = []
 for u in range(0,len(users)):
-    all_words = ' '.join(bodyUsr[0]).split()
+    all_words = ' '.join(bodyUsr[u]).split()
     hah = [word for word in all_words if 'hah' in word.lower()]
     LaughterUsr.append([len(hah), len(hah)/len(all_words), len(max(hah, key=len))])
+    print(users[u] + ' laughed '+str(LaughterUsr[u][0])+' times (every '+str(round(1/LaughterUsr[u][1]))+' words). '
+                     'The longest laugh required ' + str(LaughterUsr[u][2])+' characters!')
 
 
 
