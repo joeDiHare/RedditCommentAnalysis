@@ -22,8 +22,8 @@ import pdfkit
 
 
 # script to read-in list of words
-filename = "/Users/joeDiHare/chat.txt"
-filename = "/Users/joeDiHare/chat_full.txt"
+filename = "/Users/joeDiHare/Documents/chat.txt"
+filename = "/Users/joeDiHare/Documents/chat_full.txt"
 # 11/10/14, 18:27:25: Nahnahnah Chill: How was your daaaaaay!?
 # 06/01/2015, 12:43 - stefano cosentino: Remember the jamper?
 
@@ -268,6 +268,8 @@ if 4 in do_stages:
     for u in range(0,len(users)):
         jinxNo.append(len(difflib.get_close_matches('jinx', ' '.join(bodyUsr[u]).lower().split(), n=100, cutoff=.8)))
         print(users[u] + ' jinxed ' + str(jinxNo[u]) + ' times.')
+
+
 
 # HOW MANY 'LOVE' or 'I LOVE YOU'?
 if 5 in do_stages:
@@ -537,8 +539,21 @@ for u in range(0,len(users)):
     LaughterUsr.append([len(hah), len(hah)/len(all_words), len(max(hah, key=len))])
     print(users[u] + ' laughed '+str(LaughterUsr[u][0])+' times (every '+str(round(1/LaughterUsr[u][1]))+' words). '
                      'The longest laugh required ' + str(LaughterUsr[u][2])+' characters!')
-
-
+JokeCrakers = []
+for n in range(0,len(ConvBody)):
+    if 'haha' in ConvBody[n]:
+        if ConvSender[n-1]!=ConvSender[n]:
+            JokeCrakers.append(ConvSender[n-1])
+        # print(ConvSender[n-1] + ' joked saying: ' + ConvBody[n-1] +
+        #       '; and ' + ConvSender[n] + ' responded laughing ('+ ConvBody[n] + ')')
+JokeMade = Counter(JokeCrakers)
+JokeCrakers = []
+for user in users:
+    JokeCrakers.append(JokeMade[user])
+    print(user + ' made ' + str(JokeMade[user]) + ' jokes that received a laugh.')
+TotLaughs = sum(JokeCrakers)
+JokePerMsg = round(100*TotLaughs/len(ConvBody),1)
+print('There was a total of '+ str(TotLaughs) +' jokes, which amounts to '+str(JokePerMsg)+'% of the conversations.')
 
 # OutputPdf.close()
 
@@ -553,7 +568,8 @@ output_from_parsed_template = template.render(no_users=len(users), do_stages=do_
                                               noLove=noLove,noIloveU=noIloveU,noHateU=noHateU,
                                               ngramsUsr=ngramsUsr, lensGrams=lensGrams,
                                               CountStretchedWrdsRatio=CountStretchedWrdsRatio,StretchedWordsUsr=StretchedWordsUsr,
-                                              happy_bday=happy_bday,happy_anniv=happy_anniv,good_night=good_night)
+                                              happy_bday=happy_bday,happy_anniv=happy_anniv,good_night=good_night,
+                                              JokeCrakers=JokeCrakers,TotLaughs=TotLaughs,JokePerMsg=JokePerMsg)
 # to save the results
 with open("OutputAnalysis.html", "w") as fh:
     fh.write(output_from_parsed_template)
