@@ -24,8 +24,16 @@ import pdfkit
 # script to read-in list of words
 filename = "/Users/joeDiHare/Documents/chat.txt"
 filename = "/Users/joeDiHare/Documents/chat_full.txt"
+filename = "/Users/joeDiHare/Documents/chatMultUsr.txt"
 # 11/10/14, 18:27:25: Nahnahnah Chill: How was your daaaaaay!?
 # 06/01/2015, 12:43 - stefano cosentino: Remember the jamper?
+
+# import codecs
+# csvReader = csv.reader(codecs.open(filename, 'rU', 'utf-16'))
+
+# with open(filename, newline='',encoding='UTF8') as inputfile:
+#     for line in inputfile:
+#         print(line)
 
 # detect format from first row
 with open(filename, newline='',encoding='UTF8') as inputfile:
@@ -33,7 +41,15 @@ with open(filename, newline='',encoding='UTF8') as inputfile:
     row1 = next(reader)
 if list(filter(None, row1[1].split(' ')))[0].count(':')==1: # EU format
     PartChar = ' - '
-    MsgErr1 = ['Messages you send to this chat and calls are now secured with end-to-end encryption. Tap for more info.']
+    MsgErr1 = ['Messages you send to this chat and calls are now secured with end-to-end encryption. Tap for more info.',
+               'Enrico greco chef changed the subject from Pomaia to Sky and Sand',
+               'You added alberto ascione',
+               'Enrico greco chef changed the subject from Ostregheta to Pomaia',
+               "Enrico greco chef deleted this group's icon",
+               'You changed the subject from Sky and Sand to NSFW',
+               'Messages you send to this group are now secured with end-to-end encryption. Tap for more info.',
+               "Enrico greco chef changed this group's icon",
+               'You created group Ostregheta']
     MsgErr2 = ['<Media omitted>']
 else:                                                       # US format
     PartChar = ' '
@@ -41,14 +57,15 @@ else:                                                       # US format
     MsgErr2 = ['<video omitted>', '<image omitted>', '<audio omitted>']
 
 print("Reading chat conversation & first data validation... ", end="")
-results, mediaSender, mediaCaption = [], [], []
-# R=[]
+results, mediaSender, mediaCaption, R = [], [], [], []
 with open(filename, newline='',encoding='UTF8') as inputfile:
-    for row in csv.reader(inputfile):
-        for elem in range(0,len(row)): # strip all unicode elements
-            row[elem] = row[elem].replace('\\','').encode('ascii', 'ignore').decode('unicode_escape').strip()
+    # for row in csv.reader(inputfile):
+    for row in inputfile:
+        row = row.split(",",1)
 
         # R.append(row)
+        for elem in range(0,len(row)): # strip all unicode elements
+            row[elem] = row[elem].replace('\\','').encode('ascii', 'ignore').decode('unicode_escape').strip()
         if row!=[]: #ignore empty lines
             if re.search(r'(^\d{1,2}/\d{1,2}/\d{2,4}$)', row[0]) is None: # if not a new sender, attach to previous
                 # prevent links that have dates in it to be caught
@@ -268,7 +285,24 @@ if 4 in do_stages:
     for u in range(0,len(users)):
         jinxNo.append(len(difflib.get_close_matches('jinx', ' '.join(bodyUsr[u]).lower().split(), n=100, cutoff=.8)))
         print(users[u] + ' jinxed ' + str(jinxNo[u]) + ' times.')
-
+    # hello - helo - deletes
+    # hello - helol - transpose
+    # hello - hallo - replaces
+    # hello - heallo - inserts
+# alphabet = string.ascii_lowercase
+# alphabet = 'jainx'
+# word = 'jinx'
+# splits = [(word[:i], word[i:]) for i in range(len(word) + 1)]
+# deletes = [a + b[1:] for a, b in splits if b]
+# transposes = [a + b[1] + b[0] + b[2:] for a, b in splits if len(b) > 1]
+# replaces = [a + c + b[1:] for a, b in splits for c in alphabet if b]
+# inserts = [a + c + b for a, b in splits for c in alphabet]
+# match_jinx =list(set([word] + deletes + transposes + replaces + inserts))
+# for word in ' '.join(bodyUsr[0]).lower().split():
+#     if len(word)>2:
+#         for matchj in match_jinx:
+#             if difflib.get_close_matches(word, matchj, n=1, cutoff=.9):
+#                 print(word+': '+matchj)
 
 
 # HOW MANY 'LOVE' or 'I LOVE YOU'?
