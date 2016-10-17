@@ -43,15 +43,12 @@ with open(filename, newline='',encoding='UTF8') as inputfile:
 if list(filter(None, row1[1].split(' ')))[0].count(':')==1: # EU format
     PartChar = ' - '
     MsgErr1 = ['Messages you send to this chat and calls are now secured with end-to-end encryption. Tap for more info.',
-               'Enrico greco chef changed the subject from Pomaia to Sky and Sand',
-               'You added alberto ascione',
-               'Enrico greco chef changed the subject from Ostregheta to Pomaia',
-               "Enrico greco chef deleted this group's icon",
-               'You changed the subject from Sky and Sand to NSFW',
-               'Messages you send to this group are now secured with end-to-end encryption. Tap for more info.',
-               "Enrico greco chef changed this group's icon",
-               'You created group Ostregheta']
+               'Messages you send to this group are now secured with end-to-end encryption. Tap for more info.']
     MsgErr2 = ['<Media omitted>']
+    MsgErr3 = [' changed the subject from ',
+               'You added',
+               " deleted this group's icon",
+               'You created group ']
 else:                                                       # US format
     PartChar = ' '
     MsgErr1 = ['Messages you send to this chat and calls are now secured with end-to-end encryption.',
@@ -71,7 +68,8 @@ with open(filename, newline='',encoding='UTF8') as inputfile:
             if re.search(r'(^\d{1,2}/\d{1,2}/\d{2,4}$)', row[0]) is None: # if not a new sender, attach to previous
                 # prevent links that have dates in it to be caught
                 results[-1][-1] = results[-1][-1] + ' ' + row[0]
-            elif all([row[1].partition(PartChar)[-1].strip()!=_msg_err for _msg_err in MsgErr1]): # -rm error messages 1
+            elif all([[row[1].partition(PartChar)[-1].strip()!=_msg_err for _msg_err in MsgErr1],
+                     [row[1].partition(PartChar)[-1].strip() in _msg_err for _msg_err in MsgErr3]]): # -rm error messages 1
                 if any([row[1].partition(PartChar)[-1].partition(':')[-1].strip()==_msg_err
                         for _msg_err in MsgErr2]):
                     # count <Media omitted> and remove
@@ -108,7 +106,7 @@ for item in results:
 print('[done]')
 
 # Detect language
-Lang = detect_langs(' '.join(body))[0].lang
+Language = detect_langs(' '.join(body))[0].lang
 
 print("Create conversation lists... ", end="")
 # if the previous message is within LONG_BREAK_CON seconds and it is from the same sender, combine them in the same conversation
